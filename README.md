@@ -8,7 +8,7 @@
 * opencv  
 * matplotlib
 * Environment: Linux(already verified and recommended), Windows or MacOS  
-Note: Different operating systems may have some differences. For example, the path separator is represented as '\\' in Windows and ‘/’ in Linux. This implementation has solved such problems as much as possible, but there may be similar problems.
+Note: Different operating systems may have some differences. For example, the path separator is represented as '\\' in Windows and '/' in Linux. This implementation has solved such problems as much as possible, but there may be similar problems.
 
 ## Preparation
 * Before you train or test HairNet, you must make sure all convdata files are in the subfolder 'convdata' and other data files(including vismap, txt, exr, png) are in the subfolder 'data'.  
