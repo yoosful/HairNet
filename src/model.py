@@ -4,6 +4,8 @@ All Rights Reserved.
 This is the code to build a neural network.
 '''
 import os
+import platform
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -107,12 +109,27 @@ class MyCurEvaluation(nn.Module):
 
 def train(root_dir):
     print('This is the programme of training.')
+    # solve the path problems caused by different operating systems
+    if platform.system() == 'Windows':
+        log_path = root_dir+'\\log.txt'
+        loss_pic_path = root_dir+'\\loss.png'
+        weight_save_path = root_dir + '\\weight\\'
+        debug_weight_save_path = root_dir + '\\debug\\'
+        debug_log_path = root_dir+'\\debug\\log.txt'
+        debug_loss_pic_path = root_dir+'debug\\loss.png'
+    else:
+        log_path = root_dir+'/log.txt'
+        loss_pic_path = root_dir+'/loss.png'
+        weight_save_path = root_dir + '/weight/'
+        debug_weight_save_path = root_dir + '/debug/'
+        debug_log_path = root_dir+'/debug/log.txt'
+        debug_loss_pic_path = root_dir+'/debug/loss.png'
     # build model
     print('Initializing Network...')
     net = Net()
-    net.cuda()
+    # net.cuda()
     loss = MyLoss()
-    loss.cuda()
+    # loss.cuda()
     # set hyperparameter
     EPOCH = 100
     BATCH_SIZE = 32
@@ -121,7 +138,7 @@ def train(root_dir):
     PRINT_STEP = 10 # batch
     LOG_STEP = 100 # batch
     WEIGHT_STEP = 5 # epoch
-    LR_STEP = 10 # change learning rate
+    LR_STEP = 5 # change learning rate
     # load data
     print('Setting Dataset and DataLoader...')
     train_data = HairNetDataset(project_dir=root_dir,train_flag=1,noise_flag=1)
@@ -139,9 +156,9 @@ def train(root_dir):
                 param_group['lr'] = current_lr * 0.5
         for j, data in enumerate(train_loader, 0):
             img, convdata, visweight = data
-            img = img.cuda()
-            convdata = convdata.cuda()
-            visweight = visweight.cuda()
+            # img = img.cuda()
+            # convdata = convdata.cuda()
+            # visweight = visweight.cuda()
             # img (batch_size, 3, 256, 256)     
             # convdata (batch_size, 100, 4, 32, 32)
             # visweight (batch_size, 100, 32, 32)
@@ -150,27 +167,51 @@ def train(root_dir):
             optimizer.zero_grad()
             output = net(img) #img (batch_size, 100, 4, 32, 32)
             my_loss = loss(output, convdata, visweight)
+
+            # debug 
+            if i == 0 and j == 0:
+                if not os.path.exists(debug_log_path):
+                    with open(debug_log_path, 'w') as f:
+                        f.write('epoch: ' + str(i+1) + ', ' + str(BATCH_SIZE*(j+1)) + '/' + str(len(train_data)) + ', loss: ' + str(my_loss.item()) + '\n')
+                        print('Debug of writing log.txt!')
+                else:
+                    with open(debug_log_path, 'a') as f:
+                        f.write('epoch: ' + str(i+1) + ', ' + str(BATCH_SIZE*(j+1)) + '/' + str(len(train_data)) + ', loss: ' + str(my_loss.item()) + '\n')        
+                        print('Debug of writing log.txt!')
+                save_path = debug_weight_save_path + 'weight.pt'
+                torch.save(net.state_dict(), save_path)
+                print('Debug of saving model!')
+                debug_loss_list = []
+                debug_loss_list.append(my_loss.item())
+                plt.plot(debug_loss_list)
+                plt.xlabel('Epoch')
+                plt.ylabel('Loss')
+                plt.xlim(0, EPOCH-1)
+                plt.savefig(debug_loss_pic_path)
+                print('Debug of drawing loss picture!')
+
             epoch_loss += my_loss.item()
             my_loss.backward()
             optimizer.step()
             if (j+1)%PRINT_STEP == 0:
                 print('epoch: ' + str(i+1) + ', ' + str(BATCH_SIZE*(j+1)) + '/' + str(len(train_data)) + ', loss: ' + str(my_loss.item()))
             if (j+1)%LOG_STEP == 0:
-                if not os.path.exists(root_dir+'/log.txt'):
-                    with open(root_dir+'/log.txt', 'w') as f:
+                if not os.path.exists(log_path):
+                    with open(log_path, 'w') as f:
                         f.write('epoch: ' + str(i+1) + ', ' + str(BATCH_SIZE*(j+1)) + '/' + str(len(train_data)) + ', loss: ' + str(my_loss.item()) + '\n')    
                 else:
-                    with open(root_dir+'/log.txt', 'a') as f:
+                    with open(log_path, 'a') as f:
                         f.write('epoch: ' + str(i+1) + ', ' + str(BATCH_SIZE*(j+1)) + '/' + str(len(train_data)) + ', loss: ' + str(my_loss.item()) + '\n')        
         if (i+1)%WEIGHT_STEP == 0:       
-            save_path = root_dir + '/weight/' + str(i+1).zfill(6) + '_weight.pt'
+            save_path = weight_save_path + str(i+1).zfill(6) + '_weight.pt'
             torch.save(net.state_dict(), save_path)
         loss_list.append(epoch_loss)
     print('Finish...')
     plt.plot(loss_list)
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
-    plt.savefig(root_dir + 'loss.png')
+    plt.xlim(0, EPOCH-1)
+    plt.savefig(loss_pic_path)
 
 
 def test(root_dir, weight_path):

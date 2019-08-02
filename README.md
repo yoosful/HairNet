@@ -7,6 +7,8 @@
 * pytorch  
 * opencv  
 * matplotlib
+* Environment: Linux(already verified and recommended), Windows or MacOS  
+Note: Different operating systems may have some differences. For example, the path separator is represented as '\' in Windows and ‘/’ in Linux. This implementation has solved such problems as much as possible, but there may be similar problems.
 
 ## Preparation
 * Before you train or test HairNet, you must make sure all convdata files are in the subfolder 'convdata' and other data files(including vismap, txt, exr, png) are in the subfolder 'data'.  
@@ -22,7 +24,7 @@
 * Hyperparameters are all setted according to the paper of HairNet.  
 Epoch: 100 (origin: 500)  
 Batch size: 32  
-Learning rate: 1e-4(divided by 2 per 10 epochs, we change this setting according to our experiment)  
+Learning rate: 1e-4(divided by 2 per 5 epochs, we change this setting according to our experiment)  
 Optimization: Adam  
 
 ## Test
@@ -31,4 +33,5 @@ Optimization: Adam
 
 ## Acknowledgement
 Thank [ZZM](https://github.com/TneitaP) for helping me train thie neural network on GPU machine and give me help in daily research.
+
 
