@@ -120,9 +120,9 @@ def train(root_dir):
     # build model
     print('Initializing Network...')
     net = Net()
-    # net.cuda()
+    net.cuda()
     loss = MyLoss()
-    # loss.cuda()
+    loss.cuda()
     # set hyperparameter
     EPOCH = 100
     BATCH_SIZE = 32
@@ -149,9 +149,9 @@ def train(root_dir):
                 param_group['lr'] = current_lr * 0.5
         for j, data in enumerate(train_loader, 0):
             img, convdata, visweight = data
-            # img = img.cuda()
-            # convdata = convdata.cuda()
-            # visweight = visweight.cuda()
+            img = img.cuda()
+            convdata = convdata.cuda()
+            visweight = visweight.cuda()
             # img (batch_size, 3, 256, 256)     
             # convdata (batch_size, 100, 4, 32, 32)
             # visweight (batch_size, 100, 32, 32)
