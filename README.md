@@ -1,17 +1,15 @@
 # HairNet
- This is the implementation of [HairNet: Single-View Hair Reconstruction using Convolutional Neural Networks](https://arxiv.org/abs/1806.07467, 'HairNet') using pytorch by rqm 2019.  
- Copyright@ Qiao-Mu(Albert) Ren. All Rights Reserved.  
+This is the implementation of [HairNet: Single-View Hair Reconstruction using Convolutional Neural Networks](https://arxiv.org/abs/1806.07467, 'HairNet') using pytorch by rqm 2019.  
+Copyright@ Qiao-Mu(Albert) Ren. All Rights Reserved.  
 
 
 ## Requirement
 * pytorch  
 * opencv  
 * matplotlib
-* Environment: Linux(already verified and recommended), Windows or MacOS  
-Note: Different operating systems may have some differences. For example, the path separator is represented as '\\' in Windows and '/' in Linux. This implementation has solved such problems as much as possible, but there may be similar problems.
 
 ## Preparation
-* Before you train or test HairNet, you must make sure all convdata files are in the subfolder 'convdata' and other data files(including vismap, txt, exr, png) are in the subfolder 'data'.  
+* Before you train or test HairNet, you must **make sure all convdata files are in the subfolder 'convdata' and other data files(including vismap, txt, exr, png) are in the subfolder 'data'.**  
 * If you don't have traning data(including convdata, vismap, txt, exr, png), you can download from BaiduYun(https://pan.baidu.com/s/1CtWSRARsdUX_xO-2IjTM1w, password: ezh6) or generate data using the code from https://github.com/papagina/HairNet_DataSetGeneration.  
 * Besides, there is a subfolder 'index' in folder 'data'. The files in 'index' are list.txt, train txt and test.txt. The content in the above files is the index, such as 'strands00025_00409_10000_v0'. If you choose to generate data using the code from https://github.com/papagina/HairNet_DataSetGeneration, you should generate list.txt, train.txt and test.txt by yourself.
 
@@ -20,7 +18,7 @@ Note: Different operating systems may have some differences. For example, the pa
 * The arguments of training are mode and project path.  
 * An example bash to run this programme: ```python src/main.py --mode train --path '/home/albertren/Workspace/HairNet/HairNet-ren'```   
 * Weights of Neural Network will be saved in the subfolder 'weight' per 5 epochs.  
-* Log will be saved in Log.txt per 100 batches.  
+* Log will be saved in log.txt per 100 batches.  
 * Hyperparameters are all setted according to the paper of HairNet.  
 Epoch: 100 (origin: 500)  
 Batch size: 32  

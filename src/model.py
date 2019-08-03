@@ -109,21 +109,14 @@ class MyCurEvaluation(nn.Module):
 
 def train(root_dir):
     print('This is the programme of training.')
-    # solve the path problems caused by different operating systems
-    if platform.system() == 'Windows':
-        log_path = root_dir+'\\log.txt'
-        loss_pic_path = root_dir+'\\loss.png'
-        weight_save_path = root_dir + '\\weight\\'
-        debug_weight_save_path = root_dir + '\\debug\\'
-        debug_log_path = root_dir+'\\debug\\log.txt'
-        debug_loss_pic_path = root_dir+'\\debug\\loss.png'
-    else:
-        log_path = root_dir+'/log.txt'
-        loss_pic_path = root_dir+'/loss.png'
-        weight_save_path = root_dir + '/weight/'
-        debug_weight_save_path = root_dir + '/debug/'
-        debug_log_path = root_dir+'/debug/log.txt'
-        debug_loss_pic_path = root_dir+'/debug/loss.png'
+
+    log_path = root_dir+'/log.txt'
+    loss_pic_path = root_dir+'/loss.png'
+    weight_save_path = root_dir + '/weight/'
+    debug_weight_save_path = root_dir + '/debug/'
+    debug_log_path = root_dir+'/debug/log.txt'
+    debug_loss_pic_path = root_dir+'/debug/loss.png'
+
     # build model
     print('Initializing Network...')
     net = Net()

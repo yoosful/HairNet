@@ -22,17 +22,11 @@ class HairNetDataset(Dataset):
         self.train_flag = train_flag
         self.noise_flag = noise_flag
         self.toTensor = transforms.ToTensor()
-        # solve the path problems caused by different operating systems
-        if platform.system() == 'Windows':
-            train_path = self.project_dir + '\\data\\index\\train.txt' 
-            test_path = self.project_dir + '\\data\\index\\test.txt'
-            self.data_path = self.project_dir+'\\data\\'
-            self.convdata_path = self.project_dir+'\\convdata\\'
-        else:
-            train_path = self.project_dir + '/data/index/train.txt' 
-            test_path = self.project_dir + '/data/index/test.txt'
-            self.data_path = self.project_dir+'/data/'
-            self.convdata_path = self.project_dir+'/convdata/'
+
+        train_path = self.project_dir + '/data/index/train.txt' 
+        test_path = self.project_dir + '/data/index/test.txt'
+        self.data_path = self.project_dir+'/data/'
+        self.convdata_path = self.project_dir+'/convdata/'
         # generate dataset
         if self.train_flag == 1:
             self.train_index = []
