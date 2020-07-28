@@ -17,29 +17,29 @@ class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
         # encoder
-        self.conv1 = nn.Conv2d(3, 32, 3, 2, 1)
-        self.conv2 = nn.Conv2d(32, 64, 3, 2, 1)
+        # self.conv1 = nn.Conv2d(3, 32, 3, 2, 1)
+        self.conv2 = nn.Conv2d(3, 64, 3, 2, 1)
         self.conv3 = nn.Conv2d(64, 128, 3, 2, 1)
         self.conv4 = nn.Conv2d(128, 256, 3, 2, 1)
         self.conv5 = nn.Conv2d(256, 512, 3, 2, 1)
         # decoder
         self.fc1 = nn.Linear(1*1*512, 4*4*256)
-        self.conv6 = nn.Conv2d(256, 512, 3, 1, 1)
-        self.conv7 = nn.Conv2d(512, 512, 3, 1, 1)
-        self.conv8 = nn.Conv2d(512, 512, 3, 1, 1)
+        self.conv6 = nn.Conv2d(256, 256, 3, 1, 1)
+        self.conv7 = nn.Conv2d(256, 256, 3, 1, 1)
+        self.conv8 = nn.Conv2d(256, 256, 3, 1, 1)
         # MLP
         # Position
-        self.branch1_fc1 = nn.Linear(512*32*32, 32)
+        self.branch1_fc1 = nn.Linear(256*32*32, 32)
         self.branch1_fc2 = nn.Linear(32, 32)
         self.branch1_fc3 = nn.Linear(32, 32*32*300)
         # Curvature
-        self.branch2_fc1 = nn.Linear(512*32*32, 32)
+        self.branch2_fc1 = nn.Linear(256*32*32, 32)
         self.branch2_fc2 = nn.Linear(32, 32)
         self.branch2_fc3 = nn.Linear(32, 32*32*100)
         
     def forward(self, x):
         # encoder
-        x = F.relu(self.conv1(x)) # (batch_size, 32, 128, 128)
+        # x = F.relu(self.conv1(x)) # (batch_size, 32, 128, 128)
         x = F.relu(self.conv2(x)) # (batch_size, 64, 64, 64)
         x = F.relu(self.conv3(x)) # (batch_size, 128, 32, 32)
         x = F.relu(self.conv4(x)) # (batch_size, 256, 16, 16)
@@ -55,7 +55,7 @@ class Net(nn.Module):
         x = F.interpolate(x, scale_factor=2, mode='bilinear',align_corners = False) # (batch_size, 512, 16, 16)
         x = F.relu(self.conv8(x)) # (batch_size, 512, 16, 16)
         x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners = False) # (batch_size, 512, 32, 32)
-        x = x.view(-1, 512*32*32)
+        x = x.view(-1, 256*32*32)
         # MLP
         # Position
         branch1_x = F.relu(self.branch1_fc1(x))
@@ -107,7 +107,7 @@ class MyCurEvaluation(nn.Module):
         return loss/1024.0
 
 
-def train(root_dir):
+def train(root_dir, load_epoch = None):
     print('This is the programme of training.')
 
     log_path = root_dir+'/log.txt'
@@ -123,15 +123,21 @@ def train(root_dir):
     net.cuda()
     loss = MyLoss()
     loss.cuda()
+    # load weight if possible
+    start_epoch = 0
+    if load_epoch != None:
+        weight_load_path = 'weight/{}_weight.pt'.format(load_epoch) 
+        net.load_state_dict(torch.load(weight_load_path))
+        start_epoch = int(load_epoch)
     # set hyperparameter
-    EPOCH = 100
-    BATCH_SIZE = 32
+    EPOCH = 500
+    BATCH_SIZE = 128 
     LR = 1e-4
     # set parameter of log
     PRINT_STEP = 10 # batch
     LOG_STEP = 100 # batch
-    WEIGHT_STEP = 5 # epoch
-    LR_STEP = 5 # change learning rate
+    WEIGHT_STEP = 1 # epoch
+    LR_STEP = 250 # change learning rate
     # load data
     print('Setting Dataset and DataLoader...')
     train_data = HairNetDataset(project_dir=root_dir,train_flag=1,noise_flag=1)
@@ -140,7 +146,7 @@ def train(root_dir):
     optimizer = optim.Adam(net.parameters(), lr=LR)
     loss_list = []
     print('Training...')
-    for i in range(EPOCH):
+    for i in range(start_epoch, EPOCH):
         epoch_loss = 0.0
         # change learning rate
         if (i+1)%LR_STEP == 0:
@@ -236,4 +242,45 @@ def test(root_dir, weight_path):
         cur = cur_error(output, convdata)
         print(str(BATCH_SIZE*(i+1)) + '/' + str(len(test_data)) + ', Position loss: ' + str(pos.item()) + ', Curvature loss: ' + str(cur.item()))
 
+
+def demo(root_dir, weight_path):
+    print('This is the programme of demo.')
+    BATCH_SIZE = 1
+    # load model
+    print('Building Network...')
+    net = Net()
+    net.cuda()
+    pos_error = MyPosEvaluation()
+    pos_error.cuda()
+    cur_error = MyCurEvaluation()
+    cur_error.cuda()
+    net.load_state_dict(torch.load(weight_path))
+    net.eval()
+    test_data = HairNetDataset(project_dir=root_dir,train_flag=0,noise_flag=0)
+    test_loader = DataLoader(dataset=test_data, batch_size=BATCH_SIZE)
+    import cv2
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+    # load testing data
+    for i, data in enumerate(test_loader, 0):
+        img, _, _ = data
+        
+        cv2.imshow('', img[0].numpy().T) # input orientation
+        
+        img = img.cuda()
+        output = net(img)
+        
+        strands = output[0].cpu().detach().numpy() # hair strands
+        with open ('demo/demo.convdata', 'wb') as wf:
+            np.save(wf, strands)
+        print(np.swapaxes(strands[:,:3,:,:],0,1).shape)
+        hair_pos = np.swapaxes(np.swapaxes(strands[:,:3,:,:],0,1).reshape(3,-1), 0,1)
+        print(hair_pos.shape)
+        with open ('demo/demo.txt', 'w') as wf:
+            np.savetxt(wf, hair_pos)
+        
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        break
 
