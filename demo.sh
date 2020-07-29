@@ -1,1 +1,1 @@
-python src/main.py --mode demo --path . --weight ./weight/000070_weight.pt
+python src/main.py --mode demo --path . --weight ./weight/000015_weight.pt
