@@ -75,36 +75,29 @@ class MyLoss(nn.Module):
     def __init__(self):
         super(MyLoss, self).__init__()
     def forward(self, output, convdata, visweight):
-        pos_loss = 0.0
-        cur_loss = 0.0
-        for i in range(0,32):
-            for j in range(0,32):
-                pos_loss += (visweight[:,:,i,j].reshape(1,-1).mm(torch.pow((convdata[:,:,0:3,i,j]-output[:,:,0:3,i,j]),2).reshape(-1, 3))).sum()
-                cur_loss += (visweight[:,:,i,j].reshape(1,-1).mm(torch.pow((convdata[:,:,3,i,j]-output[:,:,3,i,j]),2).reshape(-1, 1))).sum()
-        # print(pos_loss/1024.0, cur_loss/1024.0)       
-        return pos_loss/1024.0 + cur_loss/1024.0
+        # removing nested for-loops (0.238449s -> 0.001860s)
+        pos_loss = visweight[:,:,:,:].reshape(1,-1).mm(torch.pow((convdata[:,:,0:3,:,:]-output[:,:,0:3,:,:]),2).reshape(-1, 3)).sum()
+        cur_loss = visweight[:,:,:,:].reshape(1,-1).mm(torch.pow((convdata[:,:,3,:,:]-output[:,:,3,:,:]),2).reshape(-1, 1)).sum()
+        # print(pos_loss/(convdata.shape[0]*convdata.shape[1]*1024.0) + cur_loss/(convdata.shape[0]*convdata.shape[1]*1024.0))
+        return pos_loss/(convdata.shape[0]*convdata.shape[1]*1024.0) + cur_loss/(convdata.shape[0]*convdata.shape[1]*1024.0)
 
 
 class MyPosEvaluation(nn.Module):
     def __init__(self):
         super(MyPosEvaluation, self).__init__()
     def forward(self, output, convdata):
-        loss = 0.0
-        for i in range(0,32):
-            for j in range(0,32):
-                loss += torch.mean(torch.abs(convdata[:,:,0:3,i,j]-output[:,:,0:3,i,j]))
-        return loss/1024.0
+        # removing nested for-loops (0.083651s -> 0.001371s)
+        loss = torch.mean(torch.abs(convdata[:,:,0:3,:,:]-output[:,:,0:3,:,:]))
+        return loss
 
 
 class MyCurEvaluation(nn.Module):
     def __init__(self):
         super(MyCurEvaluation, self).__init__()
     def forward(self, output, convdata):
-        loss = 0.0
-        for i in range(0,32):
-            for j in range(0,32):
-                loss += torch.mean(torch.abs(convdata[:,:,3,i,j]-output[:,:,3,i,j]))
-        return loss/1024.0
+        # removing nested for-loops (0.080810s -> 0.000990s)
+        loss = torch.mean(torch.abs(convdata[:,:,3,:,:]-output[:,:,3,:,:]))
+        return loss
 
 
 def train(root_dir, load_epoch = None):
