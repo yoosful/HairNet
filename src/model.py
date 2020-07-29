@@ -122,6 +122,7 @@ def train(root_dir, load_epoch = None):
         weight_load_path = 'weight/{}_weight.pt'.format(load_epoch) 
         net.load_state_dict(torch.load(weight_load_path))
         start_epoch = int(load_epoch)
+        print("start epoch:", start_epoch+1)
     # set hyperparameter
     EPOCH = 500
     BATCH_SIZE = 128 
