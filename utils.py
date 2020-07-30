@@ -22,3 +22,10 @@ def train_test_split():
             test_txt.append(data)
         else:
             train_txt.append(data)
+
+def update_logs():
+    with open('./log.txt') as f:
+        weight_factor = 12800
+        ls = f.readlines()
+        for line in ls:
+            print(' '.join(line.split(' ')[:-1]),float(line.split(' ')[-1].strip())/weight_factor)
