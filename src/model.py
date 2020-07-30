@@ -49,12 +49,12 @@ class Net(nn.Module):
         x = x.view(-1, 1*1*512)
         x = F.relu(self.fc1(x))
         x = x.view(-1, 256, 4, 4)
-        x = F.relu(self.conv6(x)) # (batch_size, 512, 4, 4)
-        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners = False) # (batch_size, 512, 8, 8)
-        x = F.relu(self.conv7(x)) # (batch_size, 512, 8, 8)
-        x = F.interpolate(x, scale_factor=2, mode='bilinear',align_corners = False) # (batch_size, 512, 16, 16)
-        x = F.relu(self.conv8(x)) # (batch_size, 512, 16, 16)
-        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners = False) # (batch_size, 512, 32, 32)
+        x = F.relu(self.conv6(x)) # (batch_size, 256, 4, 4)
+        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners = False) # (batch_size, 256, 8, 8)
+        x = F.relu(self.conv7(x)) # (batch_size, 256, 8, 8)
+        x = F.interpolate(x, scale_factor=2, mode='bilinear',align_corners = False) # (batch_size, 256, 16, 16)
+        x = F.relu(self.conv8(x)) # (batch_size, 256, 16, 16)
+        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners = False) # (batch_size, 256, 32, 32)
         x = x.view(-1, 256*32*32)
         # MLP
         # Position
@@ -152,7 +152,7 @@ def train(root_dir, load_epoch = None):
             img = img.cuda()
             convdata = convdata.cuda()
             visweight = visweight.cuda()
-            # img (batch_size, 3, 256, 256)     
+            # img (batch_size, 3, 128, 128)     
             # convdata (batch_size, 100, 4, 32, 32)
             # visweight (batch_size, 100, 32, 32)
 
