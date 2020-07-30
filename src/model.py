@@ -99,6 +99,47 @@ class MyCurEvaluation(nn.Module):
         loss = torch.mean(torch.abs(convdata[:,:,3,:,:]-output[:,:,3,:,:]))
         return loss
 
+class PosMSE(nn.Module):
+    def __init__(self):
+        super(PosMSE, self).__init__()
+    def forward(self, output, convdata, visweight, verbose = False):
+        visweight = visweight[:,:,:,:].reshape(1,-1)
+        e_squared = torch.pow((convdata[:,:,0:3,:,:]-output[:,:,0:3,:,:]),2).reshape(-1, 3)
+        loss = visweight.mm(e_squared).sum()
+        
+        if verbose:
+            print('[Position Loss]')
+
+            visweight1 = (visweight == 10).float()*10
+            vis_loss = visweight1.mm(e_squared).sum()
+            print("\tvis: ", (vis_loss/(convdata.shape[0]*convdata.shape[1]*1024.0)).item())
+            
+            visweight2 = (visweight == 0.1).float()*0.1
+            inv_loss = visweight2.mm(e_squared).sum()
+            print("\tinv: ", (inv_loss/(convdata.shape[0]*convdata.shape[1]*1024.0)).item())
+
+        return loss/(convdata.shape[0]*convdata.shape[1]*1024.0)
+
+class CurMSE(nn.Module):
+    def __init__(self):
+        super(CurMSE, self).__init__()
+    def forward(self, output, convdata, visweight, verbose = False):
+        visweight = visweight[:,:,:,:].reshape(1,-1)
+        e_squared = torch.pow((convdata[:,:,3,:,:]-output[:,:,3,:,:]),2).reshape(-1, 1)
+        loss = visweight.mm(e_squared).sum()
+        
+        if verbose:
+            print('[Curvature Loss]')
+
+            visweight1 = (visweight == 10).float()*10
+            vis_loss = visweight1.mm(e_squared).sum()
+            print("\tvis: ", (vis_loss/(convdata.shape[0]*convdata.shape[1]*1024.0)).item())
+            
+            visweight2 = (visweight == 0.1).float()*0.1
+            inv_loss = visweight2.mm(e_squared).sum()
+            print("\tinv: ", (inv_loss/(convdata.shape[0]*convdata.shape[1]*1024.0)).item())
+
+        return loss/(convdata.shape[0]*convdata.shape[1]*1024.0)
 
 def train(root_dir, load_epoch = None):
     print('This is the programme of training.')
@@ -214,9 +255,9 @@ def test(root_dir, weight_path):
     print('Building Network...')
     net = Net()
     net.cuda()
-    pos_error = MyPosEvaluation()
+    pos_error = PosMSE()
     pos_error.cuda()
-    cur_error = MyCurEvaluation()
+    cur_error = CurMSE()
     cur_error.cuda()
     print('Loading Network...')
     net.load_state_dict(torch.load(weight_path))
@@ -232,8 +273,8 @@ def test(root_dir, weight_path):
         convdata = convdata.cuda()
         visweight = visweight.cuda()
         output = net(img)
-        pos = pos_error(output, convdata)
-        cur = cur_error(output, convdata)
+        pos = pos_error(output, convdata, visweight, verbose = True)
+        cur = cur_error(output, convdata, visweight)
         print(str(BATCH_SIZE*(i+1)) + '/' + str(len(test_data)) + ', Position loss: ' + str(pos.item()) + ', Curvature loss: ' + str(cur.item()))
 
 
@@ -244,10 +285,6 @@ def demo(root_dir, weight_path):
     print('Building Network...')
     net = Net()
     net.cuda()
-    pos_error = MyPosEvaluation()
-    pos_error.cuda()
-    cur_error = MyCurEvaluation()
-    cur_error.cuda()
     net.load_state_dict(torch.load(weight_path))
     net.eval()
     test_data = HairNetDataset(project_dir=root_dir,train_flag=0,noise_flag=0)
