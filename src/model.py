@@ -10,6 +10,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from collections import OrderedDict
 from torch.utils.data import DataLoader
 from dataloader import HairNetDataset
 
@@ -166,7 +167,7 @@ def train(root_dir, load_epoch = None):
         print("start epoch:", start_epoch+1)
     # set hyperparameter
     EPOCH = 500
-    BATCH_SIZE = 128 
+    BATCH_SIZE = 300
     LR = 1e-4
     # set parameter of log
     PRINT_STEP = 10 # batch
@@ -181,6 +182,14 @@ def train(root_dir, load_epoch = None):
     optimizer = optim.Adam(net.parameters(), lr=LR)
     loss_list = []
     print('Training...')
+    
+    if torch.cuda.device_count() >= 1:
+        print("gpu count:", torch.cuda.device_count())
+        net = nn.DataParallel(net)
+
+    #niet = Net()
+    #net.load_state_dict(torch.load(save_path))
+    
     for i in range(start_epoch, EPOCH):
         epoch_loss = 0.0
         # change learning rate
@@ -213,6 +222,7 @@ def train(root_dir, load_epoch = None):
                         f.write('epoch: ' + str(i+1) + ', ' + str(BATCH_SIZE*(j+1)) + '/' + str(len(train_data)) + ', loss: ' + str(my_loss.item()) + '\n')        
                         print('Debug of writing log.txt!')
                 save_path = debug_weight_save_path + 'weight.pt'
+
                 torch.save(net.state_dict(), save_path)
                 print('Debug of saving model!')
                 debug_loss_list = []
@@ -236,9 +246,13 @@ def train(root_dir, load_epoch = None):
                 else:
                     with open(log_path, 'a') as f:
                         f.write('epoch: ' + str(i+1) + ', ' + str(BATCH_SIZE*(j+1)) + '/' + str(len(train_data)) + ', loss: ' + str(my_loss.item()) + '\n')        
-        if (i+1)%WEIGHT_STEP == 0:       
-            save_path = weight_save_path + str(i+1).zfill(6) + '_weight.pt'
-            torch.save(net.state_dict(), save_path)
+        if (i+1)%WEIGHT_STEP == 0:
+            new_state_dict = OrderedDict()
+            for k, v in net.state_dict().items():
+                name = k[7:]
+                new_state_dict[name]=v
+            save_path = weight_save_path + str(i+1).zfill(6) + '_weight_v2.pt'
+            torch.save(new_state_dict, save_path)
         loss_list.append(epoch_loss)
     print('Finish...')
     plt.plot(loss_list)
