@@ -24,8 +24,8 @@ class Net(nn.Module):
         self.conv4 = nn.Conv2d(128, 256, 4, 2, 1)
         self.conv5 = nn.Conv2d(256, 512, 4, 2, 1)
         # decoder
-        self.fc1 = nn.Linear(512, 1024)
-        self.fc2 = nn.Linear(1024, 4096)
+        self.fc1 = nn.Linear(512, 4096)
+        # self.fc2 = nn.Linear(1024, 4096)
         self.conv6 = nn.Conv2d(256, 512, 3, 1, 1)
         self.conv7 = nn.Conv2d(512, 512, 3, 1, 1)
         self.conv8 = nn.Conv2d(512, 512, 3, 1, 1)
@@ -50,8 +50,8 @@ class Net(nn.Module):
         # decoder
         x = x.view(-1, 1*1*512)
         x = F.relu(self.fc1(x))
-        x = x.view(-1, 1*1*1024)
-        x = F.relu(self.fc2(x))
+        # x = x.view(-1, 1*1*1024)
+        # x = F.relu(self.fc2(x))
         x = x.view(-1, 256, 4, 4)
         x = F.relu(self.conv6(x)) # (batch_size, 256, 4, 4)
         x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners = False) # (batch_size, 256, 8, 8)
@@ -59,7 +59,7 @@ class Net(nn.Module):
         x = F.interpolate(x, scale_factor=2, mode='bilinear',align_corners = False) # (batch_size, 256, 16, 16)
         x = F.relu(self.conv8(x)) # (batch_size, 256, 16, 16)
         x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners = False) # (batch_size, 256, 32, 32)
-        
+
         # MLP
         # Position
         branch1_x = F.relu(self.branch1_fc1(x))
@@ -352,7 +352,8 @@ def demo(root_dir, weight_path):
     BATCH_SIZE = 1
     # load model
     print('Building Network...')
-    net = ReconNet(3)
+    summary(Net().cuda(), (3,128,128))
+    recon_net = ReconNet(3)
     recon_net.cuda()
     recon_net.load_state_dict(torch.load(weight_path))
     recon_net.eval()
