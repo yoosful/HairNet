@@ -12,6 +12,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from dataloader import HairNetDataset
+from torchsummary import summary
 
 class Net(nn.Module):
     def __init__(self):
@@ -156,7 +157,6 @@ def train(root_dir, load_epoch = None):
 
     # build model
     print('Initializing Network...')
-    from torchsummary import summary
     net = Net()
     # print(net)
     net.cuda()
