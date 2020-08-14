@@ -13,30 +13,32 @@ import torch.optim as optim
 from collections import OrderedDict
 from torch.utils.data import DataLoader
 from dataloader import HairNetDataset
+from torchsummary import summary
 
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
         # encoder
-        # self.conv1 = nn.Conv2d(3, 32, 3, 2, 1)
-        self.conv2 = nn.Conv2d(3, 64, 3, 2, 1)
-        self.conv3 = nn.Conv2d(64, 128, 3, 2, 1)
-        self.conv4 = nn.Conv2d(128, 256, 3, 2, 1)
-        self.conv5 = nn.Conv2d(256, 512, 3, 2, 1)
+        # self.conv1 = nn.Conv2d(3, 32, 8, 2, 3)
+        self.conv2 = nn.Conv2d(3, 64, 8, 2, 3)
+        self.conv3 = nn.Conv2d(64, 128, 6, 2, 2)
+        self.conv4 = nn.Conv2d(128, 256, 4, 2, 1)
+        self.conv5 = nn.Conv2d(256, 512, 4, 2, 1)
         # decoder
-        self.fc1 = nn.Linear(1*1*512, 4*4*256)
-        self.conv6 = nn.Conv2d(256, 256, 3, 1, 1)
-        self.conv7 = nn.Conv2d(256, 256, 3, 1, 1)
-        self.conv8 = nn.Conv2d(256, 256, 3, 1, 1)
+        self.fc1 = nn.Linear(512, 4096)
+        # self.fc2 = nn.Linear(1024, 4096)
+        self.conv6 = nn.Conv2d(256, 512, 3, 1, 1)
+        self.conv7 = nn.Conv2d(512, 512, 3, 1, 1)
+        self.conv8 = nn.Conv2d(512, 512, 3, 1, 1)
         # MLP
         # Position
-        self.branch1_fc1 = nn.Linear(256*32*32, 32)
-        self.branch1_fc2 = nn.Linear(32, 32)
-        self.branch1_fc3 = nn.Linear(32, 32*32*300)
+        self.branch1_fc1 = nn.Conv2d(512, 512, 1, 1, 0)
+        self.branch1_fc2 = nn.Conv2d(512, 512, 1, 1, 0)
+        self.branch1_fc3 = nn.Conv2d(512, 300, 1, 1, 0)
         # Curvature
-        self.branch2_fc1 = nn.Linear(256*32*32, 32)
-        self.branch2_fc2 = nn.Linear(32, 32)
-        self.branch2_fc3 = nn.Linear(32, 32*32*100)
+        self.branch2_fc1 = nn.Conv2d(512, 512, 1, 1, 0)
+        self.branch2_fc2 = nn.Conv2d(512, 512, 1, 1, 0)
+        self.branch2_fc3 = nn.Conv2d(512, 100, 1, 1, 0)
         
     def forward(self, x):
         # encoder
@@ -45,10 +47,12 @@ class Net(nn.Module):
         x = F.relu(self.conv3(x)) # (batch_size, 128, 32, 32)
         x = F.relu(self.conv4(x)) # (batch_size, 256, 16, 16)
         x = F.relu(self.conv5(x)) # (batch_size, 512, 8, 8)
-        x = F.max_pool2d(x, 8) # (batch_size, 512, 1, 1)
+        x = torch.tanh(F.max_pool2d(x, 8)) # (batch_size, 512, 1, 1)
         # decoder
         x = x.view(-1, 1*1*512)
         x = F.relu(self.fc1(x))
+        # x = x.view(-1, 1*1*1024)
+        # x = F.relu(self.fc2(x))
         x = x.view(-1, 256, 4, 4)
         x = F.relu(self.conv6(x)) # (batch_size, 256, 4, 4)
         x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners = False) # (batch_size, 256, 8, 8)
@@ -56,7 +60,7 @@ class Net(nn.Module):
         x = F.interpolate(x, scale_factor=2, mode='bilinear',align_corners = False) # (batch_size, 256, 16, 16)
         x = F.relu(self.conv8(x)) # (batch_size, 256, 16, 16)
         x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners = False) # (batch_size, 256, 32, 32)
-        x = x.view(-1, 256*32*32)
+
         # MLP
         # Position
         branch1_x = F.relu(self.branch1_fc1(x))
@@ -68,8 +72,70 @@ class Net(nn.Module):
         branch2_x = F.relu(self.branch2_fc2(branch2_x))
         branch2_x = F.relu(self.branch2_fc3(branch2_x))
         branch2_x = branch2_x.view(-1, 100, 1, 32, 32)
-        x = [branch1_x, branch2_x]
-        return torch.cat(x, 2) # (batch_size, 100, 4, 32, 32)
+        x = torch.cat([branch1_x, branch2_x], 2)
+        return x # (batch_size, 100, 4, 32, 32)
+
+class ReconNet(nn.Module):
+    def __init__(self, interp_factor):
+        super(ReconNet, self).__init__()
+        self.interp_factor = interp_factor
+        # encoder
+        # self.conv1 = nn.Conv2d(3, 32, 8, 2, 3)
+        self.conv2 = nn.Conv2d(3, 64, 8, 2, 3)
+        self.conv3 = nn.Conv2d(64, 128, 6, 2, 2)
+        self.conv4 = nn.Conv2d(128, 256, 4, 2, 1)
+        self.conv5 = nn.Conv2d(256, 512, 4, 2, 1)
+        # decoder
+        self.fc1 = nn.Linear(512, 1024)
+        self.fc2 = nn.Linear(1024, 4096)
+        self.conv6 = nn.Conv2d(256, 512, 3, 1, 1)
+        self.conv7 = nn.Conv2d(512, 512, 3, 1, 1)
+        self.conv8 = nn.Conv2d(512, 512, 3, 1, 1)
+        # MLP
+        # Position
+        self.branch1_fc1 = nn.Conv2d(512, 512, 1, 1, 0)
+        self.branch1_fc2 = nn.Conv2d(512, 512, 1, 1, 0)
+        self.branch1_fc3 = nn.Conv2d(512, 300, 1, 1, 0)
+        # Curvature
+        self.branch2_fc1 = nn.Conv2d(512, 512, 1, 1, 0)
+        self.branch2_fc2 = nn.Conv2d(512, 512, 1, 1, 0)
+        self.branch2_fc3 = nn.Conv2d(512, 100, 1, 1, 0)
+        
+    def forward(self, x):
+        # encoder
+        # x = F.relu(self.conv1(x)) # (batch_size, 32, 128, 128)
+        x = F.relu(self.conv2(x)) # (batch_size, 64, 64, 64)
+        x = F.relu(self.conv3(x)) # (batch_size, 128, 32, 32)
+        x = F.relu(self.conv4(x)) # (batch_size, 256, 16, 16)
+        x = F.relu(self.conv5(x)) # (batch_size, 512, 8, 8)
+        x = torch.tanh(F.max_pool2d(x, 8)) # (batch_size, 512, 1, 1)
+        # decoder
+        x = x.view(-1, 1*1*512)
+        x = F.relu(self.fc1(x))
+        x = x.view(-1, 1*1*1024)
+        x = F.relu(self.fc2(x))
+        x = x.view(-1, 256, 4, 4)
+        x = F.relu(self.conv6(x)) # (batch_size, 256, 4, 4)
+        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners = False) # (batch_size, 256, 8, 8)
+        x = F.relu(self.conv7(x)) # (batch_size, 256, 8, 8)
+        x = F.interpolate(x, scale_factor=2, mode='bilinear',align_corners = False) # (batch_size, 256, 16, 16)
+        x = F.relu(self.conv8(x)) # (batch_size, 256, 16, 16)
+        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners = False) # (batch_size, 256, 32, 32)
+        # interpolate feature map
+        x = F.interpolate(x, scale_factor=self.interp_factor, mode='bilinear', align_corners = False) # (batch_size, 256, 32, 32)
+        # MLP
+        # Position
+        branch1_x = F.relu(self.branch1_fc1(x))
+        branch1_x = F.relu(self.branch1_fc2(branch1_x))
+        branch1_x = F.relu(self.branch1_fc3(branch1_x))
+        branch1_x = branch1_x.view(-1, 100, 3, 32*self.interp_factor, 32*self.interp_factor)
+        # Curvature
+        branch2_x = F.relu(self.branch2_fc1(x))
+        branch2_x = F.relu(self.branch2_fc2(branch2_x))
+        branch2_x = F.relu(self.branch2_fc3(branch2_x))
+        branch2_x = branch2_x.view(-1, 100, 1, 32*self.interp_factor, 32*self.interp_factor)
+        x = torch.cat([branch1_x, branch2_x], 2)
+        return x # (batch_size, 100, 4, 32, 32)
 
 
 class MyLoss(nn.Module):
@@ -155,7 +221,10 @@ def train(root_dir, load_epoch = None):
     # build model
     print('Initializing Network...')
     net = Net()
+    # print(net)
     net.cuda()
+    # summary(net, (3, 128,128))
+    # return
     loss = MyLoss()
     loss.cuda()
     # load weight if possible
@@ -167,7 +236,7 @@ def train(root_dir, load_epoch = None):
         print("start epoch:", start_epoch+1)
     # set hyperparameter
     EPOCH = 500
-    BATCH_SIZE = 300
+    BATCH_SIZE = 100 
     LR = 1e-4
     # set parameter of log
     PRINT_STEP = 10 # batch
@@ -193,7 +262,7 @@ def train(root_dir, load_epoch = None):
     for i in range(start_epoch, EPOCH):
         epoch_loss = 0.0
         # change learning rate
-        if (i+1)%LR_STEP == 0:
+        if (i+1)%LR_STEP == 0 and i != 0:
             for param_group in optimizer.param_groups:
                 current_lr = param_group['lr']
                 param_group['lr'] = current_lr * 0.5
@@ -297,10 +366,11 @@ def demo(root_dir, weight_path):
     BATCH_SIZE = 1
     # load model
     print('Building Network...')
-    net = Net()
-    net.cuda()
-    net.load_state_dict(torch.load(weight_path))
-    net.eval()
+    summary(Net().cuda(), (3,128,128))
+    recon_net = ReconNet(3)
+    recon_net.cuda()
+    recon_net.load_state_dict(torch.load(weight_path))
+    recon_net.eval()
     test_data = HairNetDataset(project_dir=root_dir,train_flag=0,noise_flag=0)
     test_loader = DataLoader(dataset=test_data, batch_size=BATCH_SIZE)
     import cv2
@@ -314,8 +384,7 @@ def demo(root_dir, weight_path):
         cv2.imshow('', img[0].numpy().T) # input orientation
         
         img = img.cuda()
-        output = net(img)
-        
+        output = recon_net(img)
         strands = output[0].cpu().detach().numpy() # hair strands
         with open ('demo/demo.convdata', 'wb') as wf:
             np.save(wf, strands)
