@@ -1,1 +1,1 @@
-python src/main.py --mode train --path . --epoch 000017
+python src/main.py --mode train --path . --epoch $1
