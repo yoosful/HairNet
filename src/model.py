@@ -17,25 +17,26 @@ class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
         # encoder
-        # self.conv1 = nn.Conv2d(3, 32, 3, 2, 1)
-        self.conv2 = nn.Conv2d(3, 64, 3, 2, 1)
-        self.conv3 = nn.Conv2d(64, 128, 3, 2, 1)
-        self.conv4 = nn.Conv2d(128, 256, 3, 2, 1)
-        self.conv5 = nn.Conv2d(256, 512, 3, 2, 1)
+        # self.conv1 = nn.Conv2d(3, 32, 8, 2, 3)
+        self.conv2 = nn.Conv2d(3, 64, 8, 2, 3)
+        self.conv3 = nn.Conv2d(64, 128, 6, 2, 2)
+        self.conv4 = nn.Conv2d(128, 256, 4, 2, 1)
+        self.conv5 = nn.Conv2d(256, 512, 4, 2, 1)
         # decoder
-        self.fc1 = nn.Linear(1*1*512, 4*4*256)
-        self.conv6 = nn.Conv2d(256, 256, 3, 1, 1)
-        self.conv7 = nn.Conv2d(256, 256, 3, 1, 1)
-        self.conv8 = nn.Conv2d(256, 256, 3, 1, 1)
+        self.fc1 = nn.Linear(512, 1024)
+        self.fc2 = nn.Linear(1024, 4096)
+        self.conv6 = nn.Conv2d(256, 512, 3, 1, 1)
+        self.conv7 = nn.Conv2d(512, 512, 3, 1, 1)
+        self.conv8 = nn.Conv2d(512, 512, 3, 1, 1)
         # MLP
         # Position
-        self.branch1_fc1 = nn.Linear(256*32*32, 32)
-        self.branch1_fc2 = nn.Linear(32, 32)
-        self.branch1_fc3 = nn.Linear(32, 32*32*300)
+        self.branch1_fc1 = nn.Conv2d(512, 512, 1, 1, 0)
+        self.branch1_fc2 = nn.Conv2d(512, 512, 1, 1, 0)
+        self.branch1_fc3 = nn.Conv2d(512, 300, 1, 1, 0)
         # Curvature
-        self.branch2_fc1 = nn.Linear(256*32*32, 32)
-        self.branch2_fc2 = nn.Linear(32, 32)
-        self.branch2_fc3 = nn.Linear(32, 32*32*100)
+        self.branch2_fc1 = nn.Conv2d(512, 512, 1, 1, 0)
+        self.branch2_fc2 = nn.Conv2d(512, 512, 1, 1, 0)
+        self.branch2_fc3 = nn.Conv2d(512, 100, 1, 1, 0)
         
     def forward(self, x):
         # encoder
@@ -44,10 +45,12 @@ class Net(nn.Module):
         x = F.relu(self.conv3(x)) # (batch_size, 128, 32, 32)
         x = F.relu(self.conv4(x)) # (batch_size, 256, 16, 16)
         x = F.relu(self.conv5(x)) # (batch_size, 512, 8, 8)
-        x = F.max_pool2d(x, 8) # (batch_size, 512, 1, 1)
+        x = torch.tanh(F.max_pool2d(x, 8)) # (batch_size, 512, 1, 1)
         # decoder
         x = x.view(-1, 1*1*512)
         x = F.relu(self.fc1(x))
+        x = x.view(-1, 1*1*1024)
+        x = F.relu(self.fc2(x))
         x = x.view(-1, 256, 4, 4)
         x = F.relu(self.conv6(x)) # (batch_size, 256, 4, 4)
         x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners = False) # (batch_size, 256, 8, 8)
@@ -55,7 +58,7 @@ class Net(nn.Module):
         x = F.interpolate(x, scale_factor=2, mode='bilinear',align_corners = False) # (batch_size, 256, 16, 16)
         x = F.relu(self.conv8(x)) # (batch_size, 256, 16, 16)
         x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners = False) # (batch_size, 256, 32, 32)
-        x = x.view(-1, 256*32*32)
+        
         # MLP
         # Position
         branch1_x = F.relu(self.branch1_fc1(x))
@@ -153,8 +156,12 @@ def train(root_dir, load_epoch = None):
 
     # build model
     print('Initializing Network...')
+    from torchsummary import summary
     net = Net()
+    # print(net)
     net.cuda()
+    # summary(net, (3, 128,128))
+    # return
     loss = MyLoss()
     loss.cuda()
     # load weight if possible
@@ -166,7 +173,7 @@ def train(root_dir, load_epoch = None):
         print("start epoch:", start_epoch+1)
     # set hyperparameter
     EPOCH = 500
-    BATCH_SIZE = 128 
+    BATCH_SIZE = 32 
     LR = 1e-4
     # set parameter of log
     PRINT_STEP = 10 # batch
@@ -184,7 +191,7 @@ def train(root_dir, load_epoch = None):
     for i in range(start_epoch, EPOCH):
         epoch_loss = 0.0
         # change learning rate
-        if (i+1)%LR_STEP == 0:
+        if (i+1)%LR_STEP == 0 and i != 0:
             for param_group in optimizer.param_groups:
                 current_lr = param_group['lr']
                 param_group['lr'] = current_lr * 0.5
