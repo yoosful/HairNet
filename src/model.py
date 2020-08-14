@@ -235,7 +235,7 @@ def train(root_dir, load_epoch = None):
         print("start epoch:", start_epoch+1)
     # set hyperparameter
     EPOCH = 500
-    BATCH_SIZE = 32 
+    BATCH_SIZE = 100 
     LR = 1e-4
     # set parameter of log
     PRINT_STEP = 10 # batch
