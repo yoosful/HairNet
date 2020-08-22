@@ -85,8 +85,8 @@ class ReconNet(nn.Module):
         self.conv4 = nn.Conv2d(128, 256, 4, 2, 1)
         self.conv5 = nn.Conv2d(256, 512, 4, 2, 1)
         # decoder
-        self.fc1 = nn.Linear(512, 1024)
-        self.fc2 = nn.Linear(1024, 4096)
+        self.fc1 = nn.Linear(512, 4096)
+        # self.fc2 = nn.Linear(1024, 4096)
         self.conv6 = nn.Conv2d(256, 512, 3, 1, 1)
         self.conv7 = nn.Conv2d(512, 512, 3, 1, 1)
         self.conv8 = nn.Conv2d(512, 512, 3, 1, 1)
@@ -111,8 +111,8 @@ class ReconNet(nn.Module):
         # decoder
         x = x.view(-1, 1*1*512)
         x = F.relu(self.fc1(x))
-        x = x.view(-1, 1*1*1024)
-        x = F.relu(self.fc2(x))
+        # x = x.view(-1, 1*1*1024)
+        # x = F.relu(self.fc2(x))
         x = x.view(-1, 256, 4, 4)
         x = F.relu(self.conv6(x)) # (batch_size, 256, 4, 4)
         x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners = False) # (batch_size, 256, 8, 8)
@@ -253,7 +253,7 @@ def train(root_dir, load_epoch = None):
     for i in range(start_epoch, EPOCH):
         epoch_loss = 0.0
         # change learning rate
-        if (i+1)%LR_STEP == 0 and i != 0:
+        if i == LR_STEP:
             for param_group in optimizer.param_groups:
                 current_lr = param_group['lr']
                 param_group['lr'] = current_lr * 0.5
