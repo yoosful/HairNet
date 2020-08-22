@@ -147,6 +147,25 @@ class MyLoss(nn.Module):
         # print(pos_loss/(convdata.shape[0]*convdata.shape[1]*1024.0) + cur_loss/(convdata.shape[0]*convdata.shape[1]*1024.0))
         return pos_loss/(convdata.shape[0]*convdata.shape[1]*1024.0) + cur_loss/(convdata.shape[0]*convdata.shape[1]*1024.0)
 
+class CollisionLoss(nn.Module):
+    def __init__(self):
+        super(CollisionLoss, self).__init__()
+    def forward(self, output, convdata):
+        x, y, z = 0.005, 1.75, 0.01
+        a, b, c = 0.08, 0.12, 0.1
+        L1 = torch.add(
+            torch.add(torch.abs(output[:,:,0,:,1:] - output[:,:,0,:,:-1]),torch.abs(output[:,:,1,:,1:] - output[:,:,1,:,:-1])),
+            torch.abs(output[:,:,2,:,1:] - output[:,:,2,:,:-1])
+            )
+        D = 1 - torch.add(
+            torch.add(torch.pow((output[:,:,0,:,1:]-x) / a, 2), torch.pow((output[:,:,1,:,1:]-y) / b, 2)),
+            torch.pow((output[:,:,2,:,1:]-z) / c, 2)
+        ) 
+        D[D<0] = 0
+        C = torch.sum(L1 * D)
+        loss = C /(convdata.shape[0]*convdata.shape[1]*1024.0)
+        return loss
+
 class PosMSE(nn.Module):
     def __init__(self):
         super(PosMSE, self).__init__()
@@ -301,7 +320,7 @@ def train(root_dir, load_epoch = None):
 
 def test(root_dir, weight_path):
     print('This is the programme of testing.')
-    BATCH_SIZE = 32
+    BATCH_SIZE = 1
     # load model
     print('Building Network...')
     net = Net()
@@ -310,6 +329,8 @@ def test(root_dir, weight_path):
     pos_error.cuda()
     cur_error = CurMSE()
     cur_error.cuda()
+    col_error = CollisionLoss()
+    col_error.cuda()
     print('Loading Network...')
     net.load_state_dict(torch.load(weight_path))
     net.eval()
@@ -326,8 +347,14 @@ def test(root_dir, weight_path):
         output = net(img)
         pos = pos_error(output, convdata, visweight, verbose = True)
         cur = cur_error(output, convdata, visweight)
-        print(str(BATCH_SIZE*(i+1)) + '/' + str(len(test_data)) + ', Position loss: ' + str(pos.item()) + ', Curvature loss: ' + str(cur.item()))
-
+        col = col_error(output, convdata)
+        print(
+            str(BATCH_SIZE*(i+1)) + '/' + str(len(test_data)) 
+            + ', Position loss: ' + str(pos.item()) 
+            + ', Curvature loss: ' + str(cur.item())
+            + ', Collision loss: ' + str(col.item())
+        )
+        
 
 def demo(root_dir, weight_path):
     print('This is the programme of demo.')
