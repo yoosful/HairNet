@@ -147,24 +147,6 @@ class MyLoss(nn.Module):
         # print(pos_loss/(convdata.shape[0]*convdata.shape[1]*1024.0) + cur_loss/(convdata.shape[0]*convdata.shape[1]*1024.0))
         return pos_loss/(convdata.shape[0]*convdata.shape[1]*1024.0) + cur_loss/(convdata.shape[0]*convdata.shape[1]*1024.0)
 
-
-class MyPosEvaluation(nn.Module):
-    def __init__(self):
-        super(MyPosEvaluation, self).__init__()
-    def forward(self, output, convdata):
-        # removing nested for-loops (0.083651s -> 0.001371s)
-        loss = torch.mean(torch.abs(convdata[:,:,0:3,:,:]-output[:,:,0:3,:,:]))
-        return loss
-
-
-class MyCurEvaluation(nn.Module):
-    def __init__(self):
-        super(MyCurEvaluation, self).__init__()
-    def forward(self, output, convdata):
-        # removing nested for-loops (0.080810s -> 0.000990s)
-        loss = torch.mean(torch.abs(convdata[:,:,3,:,:]-output[:,:,3,:,:]))
-        return loss
-
 class PosMSE(nn.Module):
     def __init__(self):
         super(PosMSE, self).__init__()
