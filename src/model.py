@@ -146,7 +146,7 @@ class MyLoss(nn.Module):
         cur_loss = visweight[:,:,:,:].reshape(1,-1).mm(torch.pow((convdata[:,:,3,:,:]-output[:,:,3,:,:]),2).reshape(-1, 1)).sum()
         col_loss = CollisionLoss()
         # print(pos_loss/(convdata.shape[0]*convdata.shape[1]*1024.0) + cur_loss/(convdata.shape[0]*convdata.shape[1]*1024.0))
-        return pos_loss/(convdata.shape[0]*convdata.shape[1]*1024.0) + cur_loss/(convdata.shape[0]*convdata.shape[1]*1024.0)
+        return pos_loss/(convdata.shape[0]*convdata.shape[1]*1024.0) + 1* cur_loss/(convdata.shape[0]*convdata.shape[1]*1024.0) + 1e-4*col_loss
 
 class CollisionLoss(nn.Module):
     def __init__(self):
