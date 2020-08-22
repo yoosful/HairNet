@@ -64,12 +64,12 @@ class Net(nn.Module):
         # Position
         branch1_x = F.relu(self.branch1_fc1(x))
         branch1_x = F.relu(self.branch1_fc2(branch1_x))
-        branch1_x = F.relu(self.branch1_fc3(branch1_x))
+        branch1_x = self.branch1_fc3(branch1_x)
         branch1_x = branch1_x.view(-1, 100, 3, 32, 32)
         # Curvature
         branch2_x = F.relu(self.branch2_fc1(x))
         branch2_x = F.relu(self.branch2_fc2(branch2_x))
-        branch2_x = F.relu(self.branch2_fc3(branch2_x))
+        branch2_x = self.branch2_fc3(branch2_x)
         branch2_x = branch2_x.view(-1, 100, 1, 32, 32)
         x = torch.cat([branch1_x, branch2_x], 2)
         return x # (batch_size, 100, 4, 32, 32)
@@ -126,12 +126,12 @@ class ReconNet(nn.Module):
         # Position
         branch1_x = F.relu(self.branch1_fc1(x))
         branch1_x = F.relu(self.branch1_fc2(branch1_x))
-        branch1_x = F.relu(self.branch1_fc3(branch1_x))
+        branch1_x = self.branch1_fc3(branch1_x)
         branch1_x = branch1_x.view(-1, 100, 3, 32*self.interp_factor, 32*self.interp_factor)
         # Curvature
         branch2_x = F.relu(self.branch2_fc1(x))
         branch2_x = F.relu(self.branch2_fc2(branch2_x))
-        branch2_x = F.relu(self.branch2_fc3(branch2_x))
+        branch2_x = self.branch2_fc3(branch2_x)
         branch2_x = branch2_x.view(-1, 100, 1, 32*self.interp_factor, 32*self.interp_factor)
         x = torch.cat([branch1_x, branch2_x], 2)
         return x # (batch_size, 100, 4, 32, 32)
