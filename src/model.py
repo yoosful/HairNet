@@ -144,6 +144,7 @@ class MyLoss(nn.Module):
         # removing nested for-loops (0.238449s -> 0.001860s)
         pos_loss = visweight[:,:,:,:].reshape(1,-1).mm(torch.pow((convdata[:,:,0:3,:,:]-output[:,:,0:3,:,:]),2).reshape(-1, 3)).sum()
         cur_loss = visweight[:,:,:,:].reshape(1,-1).mm(torch.pow((convdata[:,:,3,:,:]-output[:,:,3,:,:]),2).reshape(-1, 1)).sum()
+        col_loss = CollisionLoss()
         # print(pos_loss/(convdata.shape[0]*convdata.shape[1]*1024.0) + cur_loss/(convdata.shape[0]*convdata.shape[1]*1024.0))
         return pos_loss/(convdata.shape[0]*convdata.shape[1]*1024.0) + cur_loss/(convdata.shape[0]*convdata.shape[1]*1024.0)
 
@@ -331,6 +332,7 @@ def test(root_dir, weight_path):
     cur_error.cuda()
     col_error = CollisionLoss()
     col_error.cuda()
+    tot_error = MyLoss().cuda()
     print('Loading Network...')
     net.load_state_dict(torch.load(weight_path))
     net.eval()
@@ -348,11 +350,13 @@ def test(root_dir, weight_path):
         pos = pos_error(output, convdata, visweight, verbose = True)
         cur = cur_error(output, convdata, visweight)
         col = col_error(output, convdata)
+        tot = tot_error(output, convdata, visweight)
         print(
             str(BATCH_SIZE*(i+1)) + '/' + str(len(test_data)) 
             + ', Position loss: ' + str(pos.item()) 
             + ', Curvature loss: ' + str(cur.item())
             + ', Collision loss: ' + str(col.item())
+            + ', Total loss: ' + str(tot.item())
         )
         
 
