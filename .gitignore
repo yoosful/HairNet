@@ -5,3 +5,6 @@ src/__pycache__
 weight
 .vscode
 fetch_data.sh
+demo/demo.data
+demo/demo.convdata
+demo/demo.txt
