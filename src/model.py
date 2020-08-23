@@ -385,26 +385,39 @@ def demo(root_dir, weight_path):
         img = img.cuda()
         output = recon_net(img)
         strands = output[0].cpu().detach().numpy() # hair strands
+
+        # axis-wise 1D gaussian filtering
         gaussian = cv2.getGaussianKernel(10, 3)
-        # print(strands[:,:3,0,0])
         for i in range(strands.shape[2]):
             for j in range(strands.shape[3]):
                 strands[:,:3,i,j] = cv2.filter2D(strands[:,:3,i,j], -1, gaussian)
-        # print(strands[:,:3,0,0])
+
+        ### TODO: fine-tune positions with curvature
+
+        # generate .convdata file
         with open ('demo/demo.convdata', 'wb') as wf:
             np.save(wf, strands)
-        print(np.swapaxes(strands[:,:3,:,:],0,1).shape)
-        reshaped = np.swapaxes(strands[:,:3,:,:],0,1)
+
+        # generate .data file (format in http://www-scf.usc.edu/~liwenhu/SHM/database.html)
         import struct
-        n_vertex_per_strand = strands.shape[0] # int 
-        data = [n_vertex_per_strand]
+        n_strand = strands.shape[2]*strands.shape[3]
+        n_vertex = strands.shape[0]
         fmt = 'i'
-        strands[]
-        
-        hair_pos = np.swapaxes(hair_pos.reshape(3,-1), 0,1)
-        print(hair_pos.shape)
-        with open ('demo/demo.txt', 'w') as wf:
-            np.savetxt(wf, hair_pos)
+        data = [n_strand]
+        for i in range(strands.shape[2]):
+            for j in range(strands.shape[3]):
+                fmt += 'i'
+                data += [n_vertex]
+                for k in range(strands.shape[0]): # vertex (100)
+                    fmt += 'ddd'
+                    data += strands[k,:3,i,j].tolist()
+        with open ('demo/demo.data', 'wb') as wf:
+            wf.write(struct.pack(fmt, *data))
+                    
+        # reshaped = np.swapaxes(strands[:,:3,:,:],0,1)
+        # hair_pos = np.swapaxes(reshaped.reshape(3,-1), 0,1)
+        # with open ('demo/demo.txt', 'w') as wf:
+        #     np.savetxt(wf, hair_pos)
         
         cv2.waitKey(0)
         cv2.destroyAllWindows()
