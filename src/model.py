@@ -366,7 +366,7 @@ def demo(root_dir, weight_path):
     # load model
     print('Building Network...')
     summary(Net().cuda(), (3,128,128))
-    recon_net = ReconNet(3)
+    recon_net = ReconNet(1)
     recon_net.cuda()
     recon_net.load_state_dict(torch.load(weight_path))
     recon_net.eval()
@@ -380,15 +380,28 @@ def demo(root_dir, weight_path):
     for i, data in enumerate(test_loader, 0):
         img, _, _ = data
         
-        cv2.imshow('', img[0].numpy().T) # input orientation
+        cv2.imshow('', np.swapaxes(np.swapaxes(img[0].numpy(),0,2),0,1)) # input orientation
         
         img = img.cuda()
         output = recon_net(img)
         strands = output[0].cpu().detach().numpy() # hair strands
+        gaussian = cv2.getGaussianKernel(10, 3)
+        # print(strands[:,:3,0,0])
+        for i in range(strands.shape[2]):
+            for j in range(strands.shape[3]):
+                strands[:,:3,i,j] = cv2.filter2D(strands[:,:3,i,j], -1, gaussian)
+        # print(strands[:,:3,0,0])
         with open ('demo/demo.convdata', 'wb') as wf:
             np.save(wf, strands)
         print(np.swapaxes(strands[:,:3,:,:],0,1).shape)
-        hair_pos = np.swapaxes(np.swapaxes(strands[:,:3,:,:],0,1).reshape(3,-1), 0,1)
+        reshaped = np.swapaxes(strands[:,:3,:,:],0,1)
+        import struct
+        n_vertex_per_strand = strands.shape[0] # int 
+        data = [n_vertex_per_strand]
+        fmt = 'i'
+        strands[]
+        
+        hair_pos = np.swapaxes(hair_pos.reshape(3,-1), 0,1)
         print(hair_pos.shape)
         with open ('demo/demo.txt', 'w') as wf:
             np.savetxt(wf, hair_pos)
