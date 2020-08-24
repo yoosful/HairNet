@@ -39,68 +39,7 @@ class Net(nn.Module):
         self.branch2_fc2 = nn.Conv2d(512, 512, 1, 1, 0)
         self.branch2_fc3 = nn.Conv2d(512, 100, 1, 1, 0)
         
-    def forward(self, x):
-        # encoder
-        # x = F.relu(self.conv1(x)) # (batch_size, 32, 128, 128)
-        x = F.relu(self.conv2(x)) # (batch_size, 64, 64, 64)
-        x = F.relu(self.conv3(x)) # (batch_size, 128, 32, 32)
-        x = F.relu(self.conv4(x)) # (batch_size, 256, 16, 16)
-        x = F.relu(self.conv5(x)) # (batch_size, 512, 8, 8)
-        x = torch.tanh(F.max_pool2d(x, 8)) # (batch_size, 512, 1, 1)
-        # decoder
-        x = x.view(-1, 1*1*512)
-        x = F.relu(self.fc1(x))
-        # x = x.view(-1, 1*1*1024)
-        # x = F.relu(self.fc2(x))
-        x = x.view(-1, 256, 4, 4)
-        x = F.relu(self.conv6(x)) # (batch_size, 256, 4, 4)
-        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners = False) # (batch_size, 256, 8, 8)
-        x = F.relu(self.conv7(x)) # (batch_size, 256, 8, 8)
-        x = F.interpolate(x, scale_factor=2, mode='bilinear',align_corners = False) # (batch_size, 256, 16, 16)
-        x = F.relu(self.conv8(x)) # (batch_size, 256, 16, 16)
-        x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners = False) # (batch_size, 256, 32, 32)
-
-        # MLP
-        # Position
-        branch1_x = F.relu(self.branch1_fc1(x))
-        branch1_x = F.relu(self.branch1_fc2(branch1_x))
-        branch1_x = self.branch1_fc3(branch1_x)
-        branch1_x = branch1_x.view(-1, 100, 3, 32, 32)
-        # Curvature
-        branch2_x = F.relu(self.branch2_fc1(x))
-        branch2_x = F.relu(self.branch2_fc2(branch2_x))
-        branch2_x = self.branch2_fc3(branch2_x)
-        branch2_x = branch2_x.view(-1, 100, 1, 32, 32)
-        x = torch.cat([branch1_x, branch2_x], 2)
-        return x # (batch_size, 100, 4, 32, 32)
-
-class ReconNet(nn.Module):
-    def __init__(self, interp_factor):
-        super(ReconNet, self).__init__()
-        self.interp_factor = interp_factor
-        # encoder
-        # self.conv1 = nn.Conv2d(3, 32, 8, 2, 3)
-        self.conv2 = nn.Conv2d(3, 64, 8, 2, 3)
-        self.conv3 = nn.Conv2d(64, 128, 6, 2, 2)
-        self.conv4 = nn.Conv2d(128, 256, 4, 2, 1)
-        self.conv5 = nn.Conv2d(256, 512, 4, 2, 1)
-        # decoder
-        self.fc1 = nn.Linear(512, 4096)
-        # self.fc2 = nn.Linear(1024, 4096)
-        self.conv6 = nn.Conv2d(256, 512, 3, 1, 1)
-        self.conv7 = nn.Conv2d(512, 512, 3, 1, 1)
-        self.conv8 = nn.Conv2d(512, 512, 3, 1, 1)
-        # MLP
-        # Position
-        self.branch1_fc1 = nn.Conv2d(512, 512, 1, 1, 0)
-        self.branch1_fc2 = nn.Conv2d(512, 512, 1, 1, 0)
-        self.branch1_fc3 = nn.Conv2d(512, 300, 1, 1, 0)
-        # Curvature
-        self.branch2_fc1 = nn.Conv2d(512, 512, 1, 1, 0)
-        self.branch2_fc2 = nn.Conv2d(512, 512, 1, 1, 0)
-        self.branch2_fc3 = nn.Conv2d(512, 100, 1, 1, 0)
-        
-    def forward(self, x):
+    def forward(self, x, interp_factor = 1):
         # encoder
         # x = F.relu(self.conv1(x)) # (batch_size, 32, 128, 128)
         x = F.relu(self.conv2(x)) # (batch_size, 64, 64, 64)
@@ -121,18 +60,19 @@ class ReconNet(nn.Module):
         x = F.relu(self.conv8(x)) # (batch_size, 256, 16, 16)
         x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners = False) # (batch_size, 256, 32, 32)
         # interpolate feature map
-        x = F.interpolate(x, scale_factor=self.interp_factor, mode='bilinear', align_corners = False) # (batch_size, 256, 32, 32)
+        if interp_factor != 1:
+            x = F.interpolate(x, scale_factor=interp_factor, mode='bilinear', align_corners = False) # (batch_size, 256, 32, 32)
         # MLP
         # Position
         branch1_x = F.relu(self.branch1_fc1(x))
         branch1_x = F.relu(self.branch1_fc2(branch1_x))
         branch1_x = self.branch1_fc3(branch1_x)
-        branch1_x = branch1_x.view(-1, 100, 3, 32*self.interp_factor, 32*self.interp_factor)
+        branch1_x = branch1_x.view(-1, 100, 3, 32*interp_factor, 32*interp_factor)
         # Curvature
         branch2_x = F.relu(self.branch2_fc1(x))
         branch2_x = F.relu(self.branch2_fc2(branch2_x))
         branch2_x = self.branch2_fc3(branch2_x)
-        branch2_x = branch2_x.view(-1, 100, 1, 32*self.interp_factor, 32*self.interp_factor)
+        branch2_x = branch2_x.view(-1, 100, 1, 32*interp_factor, 32*interp_factor)
         x = torch.cat([branch1_x, branch2_x], 2)
         return x # (batch_size, 100, 4, 32, 32)
 
@@ -365,11 +305,10 @@ def demo(root_dir, weight_path, img_path='/home/eric/soma/hairnet/data/strands00
     BATCH_SIZE = 1
     # load model
     print('Building Network...')
-    summary(Net().cuda(), (3,128,128))
-    recon_net = ReconNet(1)
-    recon_net.cuda()
-    recon_net.load_state_dict(torch.load(weight_path))
-    recon_net.eval()
+    net = Net()
+    net.cuda()
+    net.load_state_dict(torch.load(weight_path))
+    net.eval()
     import cv2
     import numpy as np
     import matplotlib.pyplot as plt
@@ -383,7 +322,7 @@ def demo(root_dir, weight_path, img_path='/home/eric/soma/hairnet/data/strands00
     # cv2.imshow('', np.swapaxes(np.swapaxes(img[0].numpy(),0,2),0,1)) # input orientation
     
     img = img.cuda()
-    output = recon_net(img)
+    output = net(img, 2)
     strands = output[0].cpu().detach().numpy() # hair strands
 
     # axis-wise 1D gaussian filtering
@@ -393,10 +332,6 @@ def demo(root_dir, weight_path, img_path='/home/eric/soma/hairnet/data/strands00
             strands[:,:3,i,j] = cv2.filter2D(strands[:,:3,i,j], -1, gaussian)
 
     ### TODO: fine-tune positions with curvature
-
-    # generate .convdata file
-    with open ('demo/demo.convdata', 'wb') as wf:
-        np.save(wf, strands)
 
     # generate .data file (format in http://www-scf.usc.edu/~liwenhu/SHM/database.html)
     import struct
@@ -409,16 +344,11 @@ def demo(root_dir, weight_path, img_path='/home/eric/soma/hairnet/data/strands00
             fmt += 'i'
             data += [n_vertex]
             for k in range(strands.shape[0]): # vertex (100)
-                fmt += 'ddd'
+                fmt += 'fff'
                 data += strands[k,:3,i,j].tolist()
     with open ('demo/demo.data', 'wb') as wf:
         wf.write(struct.pack(fmt, *data))
-                
-    # reshaped = np.swapaxes(strands[:,:3,:,:],0,1)
-    # hair_pos = np.swapaxes(reshaped.reshape(3,-1), 0,1)
-    # with open ('demo/demo.txt', 'w') as wf:
-    #     np.savetxt(wf, hair_pos)
-    
+
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
 
