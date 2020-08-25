@@ -300,7 +300,7 @@ def test(root_dir, weight_path):
         )
         
 
-def demo(root_dir, weight_path, img_path='/home/eric/soma/hairnet/data/strands00164_00344_11111_v1.png'):
+def demo(root_dir, weight_path, interp_factor, img_path):
     print('This is the programme of demo.')
     BATCH_SIZE = 1
     # load model
@@ -312,17 +312,19 @@ def demo(root_dir, weight_path, img_path='/home/eric/soma/hairnet/data/strands00
     import cv2
     import numpy as np
     import matplotlib.pyplot as plt
-    from mpl_toolkits.mplot3d import Axes3D
     from preprocessing import gasuss_noise
-    # load testing data
+    from utils import save_binary
+    convdata_path = 'convdata/'+img_path.split('/')[-1].split('_v1')[0]+'.convdata'
+    convdata = np.load(convdata_path).reshape(100, 4, 32, 32)
+        
+    # load demo data
     img = cv2.imread(img_path)
     img = gasuss_noise(img)     
     img = img.reshape(1,3,128,128)
     img = torch.from_numpy(img).float()
-    # cv2.imshow('', np.swapaxes(np.swapaxes(img[0].numpy(),0,2),0,1)) # input orientation
     
     img = img.cuda()
-    output = net(img, 2)
+    output = net(img, interp_factor)
     strands = output[0].cpu().detach().numpy() # hair strands
 
     # axis-wise 1D gaussian filtering
@@ -334,21 +336,8 @@ def demo(root_dir, weight_path, img_path='/home/eric/soma/hairnet/data/strands00
     ### TODO: fine-tune positions with curvature
 
     # generate .data file (format in http://www-scf.usc.edu/~liwenhu/SHM/database.html)
-    import struct
-    n_strand = strands.shape[2]*strands.shape[3]
-    n_vertex = strands.shape[0]
-    fmt = 'i'
-    data = [n_strand]
-    for i in range(strands.shape[2]):
-        for j in range(strands.shape[3]):
-            fmt += 'i'
-            data += [n_vertex]
-            for k in range(strands.shape[0]): # vertex (100)
-                fmt += 'fff'
-                data += strands[k,:3,i,j].tolist()
-    with open ('demo/demo.data', 'wb') as wf:
-        wf.write(struct.pack(fmt, *data))
-
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
+    epoch = weight_path[-16:-10]
+    save_binary(strands, 'demo/epoch_{}.data'.format(epoch))
+    
+    ground_truth = convdata
+    save_binary(ground_truth, 'demo/ground_truth.data')

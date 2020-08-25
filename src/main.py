@@ -13,6 +13,8 @@ parser.add_argument('--mode', type = str, default='train')
 parser.add_argument('--path', type = str, default='.')
 parser.add_argument('--weight', type = str, default='./weight/000001_weight.pt')
 parser.add_argument('--epoch', type=str, default=None)
+parser.add_argument('--interp_factor', type=int, default=1)
+parser.add_argument('--img_path', type=str, default='data/strands00164_00344_11111_v1.png')
 args = parser.parse_args()
 
 def main():
@@ -22,7 +24,7 @@ def main():
     if args.mode == 'test':
         test(args.path, args.weight)
     if args.mode == 'demo':
-        demo(args.path, args.weight)
+        demo(args.path, args.weight, args.interp_factor, args.img_path)
 
 if __name__ == '__main__':
     main()
