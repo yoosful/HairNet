@@ -1,35 +1,43 @@
 # HairNet
-This is the implementation of [HairNet: Single-View Hair Reconstruction using Convolutional Neural Networks](https://arxiv.org/abs/1806.07467, 'HairNet') using pytorch by rqm 2019.  
-Copyright@ Qiao-Mu(Albert) Ren. All Rights Reserved.  
 
+## abstract
 
-## Requirement
-* pytorch  
-* opencv  
-* matplotlib
+- implementation of [HairNet: Single-View Hair Reconstruction using Convolutional Neural Networks](https://arxiv.org/abs/1806.07467)
+- several changes in training data & network architecture for faster training
+  - smaller input size: 256 x 256 -> 128 x 128
+  - fewer convolution layers in the encoder
 
-## Preparation
-* Before you train or test HairNet, you must **make sure all convdata files are in the subfolder 'convdata' and other data files(including vismap, txt, exr, png) are in the subfolder 'data'.**  
-* If you don't have traning data(including convdata, vismap, txt, exr, png), you can download from BaiduYun(https://pan.baidu.com/s/1CtWSRARsdUX_xO-2IjTM1w, password: ezh6) or generate data using the code from https://github.com/papagina/HairNet_DataSetGeneration.  
-* Besides, there is a subfolder 'index' in folder 'data'. The files in 'index' are list.txt, train txt and test.txt. The content in the above files is the index, such as 'strands00025_00409_10000_v0'. If you choose to generate data using the code from https://github.com/papagina/HairNet_DataSetGeneration, you should generate list.txt, train.txt and test.txt by yourself.
+## instructions
 
-## Train
-* **Note: this implementation only accounts for position loss and curvature loss.**  
-* The arguments of training are mode and project path.  
-* An example bash to run this programme: ```python src/main.py --mode train --path '/home/albertren/Workspace/HairNet/HairNet-ren'```   
-* Weights of Neural Network will be saved in the subfolder 'weight' per 5 epochs.  
-* Log will be saved in log.txt per 100 batches.  
-* Hyperparameters are all setted according to the paper of HairNet.  
-Epoch: 100 (origin: 500)  
-Batch size: 32  
-Learning rate: 1e-4(divided by 2 per 5 epochs, we change this setting according to our experiment)  
-Optimization: Adam  
+### installation
 
-## Test
-* The arguments of training are mode, project path and weight path.  
-* An example bash to run this programme: ```python src/main.py --mode test --path '/home/albertren/Workspace/HairNet/HairNet-ren' --weight '/home/albertren/Workspace/HairNet/HairNet-ren/weight/000001_weight.pt'```  
+- python3
+- python packages (pytorch, opencv, etc.)
+  - `pip install -r requirements.txt`
+
+### training
+
+- **train** mode performs network training with 70% of the data
+- [download](https://bit.ly/32l59ZD) HairNet's training data (2D hair orientation image & 3D hair model)
+  - refer to the [author's implementation](https://github.com/papagina/HairNet_DataSetGeneration) for more details
+- `python src/main.py --mode train --path .`
+- the trained model will be saved in the **weight** folder
+
+### testing
+
+- **train** mode evaluates the network with 30% of the data
+- train or [download](https://bit.ly/34I4QLx) a pretrained model to **weight** folder
+- `python src/main.py --mode test --path . --weight weight/*_weight.pt`
+
+### reconstruction
+
+- **reconstruction** mode performs some post-processing and saves the 3D model as a `*.data` file
+- `python src/main.py --mode reconstruction --path . --weight weight/*_weight.pt --interp_factor 1`
+- to visualize the generated file, you will need a renderer
+  - download our [OpenGL implementation](https://github.com/givenone/hair-renderer)
+  - compile and run it on the `*.data` file
 
 ## Acknowledgement
-Thank [ZZM](https://github.com/TneitaP) for helping me train thie neural network on GPU machine and give me help in daily research.
+The implementation is based on [MrPhD](https://github.com/MrPhD).
 
 
