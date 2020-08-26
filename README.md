@@ -38,6 +38,6 @@
   - compile and run it on the `*.data` file
 
 ## Acknowledgement
-The implementation is based on [MrPhD](https://github.com/MrPhD).
+Baseline implementation forked from [MrPhD](https://github.com/MrPhD).
 
 
