@@ -1,8 +1,9 @@
-data
-convdata
-debug
-src/__pycache__
-weight
-.vscode
-fetch_data.sh
+venv
+
 demo
+data
+debug
+weight
+convdata
+
+src/__pycache__

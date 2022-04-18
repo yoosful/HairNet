@@ -1,0 +1,6 @@
+torch
+PyQt5
+matplotlib
+torchvision
+# opencv-python
+opencv-python-headless
