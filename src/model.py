@@ -4,6 +4,7 @@ All Rights Reserved.
 This is the code to build a neural network.
 """
 import os
+import numpy as np
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
@@ -11,6 +12,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from dataloader import HairNetDataset
+
+import wandb
 
 import cv2
 import matplotlib.pyplot as plt
@@ -225,9 +228,12 @@ def train(root_dir, load_epoch=None):
     debug_loss_pic_path = root_dir + "/debug/loss.png"
     """
 
+    logger = wandb.init(project="HairNet")
+
     # build model
     print("Initializing Network...")
     net = Net()
+    wandb.watch(net, log_freq=10)
     # print(net)
     # net.cuda()
     # summary(net, (3, 128,128))
@@ -236,6 +242,7 @@ def train(root_dir, load_epoch=None):
     # loss.cuda()
     # load weight if possible
     start_epoch = 0
+    net.train()
     if load_epoch != None:
         weight_load_path = "weight/{}_weight.pt".format(load_epoch)
         net.load_state_dict(torch.load(weight_load_path))
@@ -281,6 +288,7 @@ def train(root_dir, load_epoch=None):
                 param_group["lr"] = current_lr * 0.5
         for j, data in enumerate(train_loader, 0):
             img, convdata, visweight = data
+            print(img.shape)
             # img = img.cuda()
             # convdata = convdata.cuda()
             # visweight = visweight.cuda()
@@ -318,6 +326,8 @@ def train(root_dir, load_epoch=None):
                     with open(log_path, "a") as f:
                         f.write(log_line + "\n")
 
+            logger.log({"train/loss": my_loss})
+
         if (i + 1) % WEIGHT_STEP == 0:
             save_path = weight_save_path + str(i + 1).zfill(6) + "_weight.pt"
             torch.save(net.state_dict(), save_path)
@@ -338,11 +348,11 @@ def test(root_dir, weight_path):
     print("Building Network...")
     net = Net()
     # net.cuda()
-    pos_error = PosMSE()
+    pos_error = PosMSE()  # Position
     # pos_error.cuda()
-    cur_error = CurMSE()
+    cur_error = CurMSE()  # Curvature
     # cur_error.cuda()
-    col_error = CollisionLoss()
+    col_error = CollisionLoss()  # Collision
     # col_error.cuda()
     tot_error = MyLoss()
     # tot_error.cuda()
@@ -380,9 +390,8 @@ def test(root_dir, weight_path):
         )
 
 
-def demo(root_dir, weight_path, interp_factor, img_path):
+def demo(weight_path, interp_factor, img_path):
     print("This is the programme of demo.")
-    BATCH_SIZE = 1
     # load model
     print("Building Network...")
     net = Net()
@@ -401,6 +410,7 @@ def demo(root_dir, weight_path, interp_factor, img_path):
 
     # img = img.cuda()
     output = net(img, interp_factor)
+
     strands = output[0].cpu().detach().numpy()  # hair strands
 
     # axis-wise 1D gaussian filtering
@@ -417,3 +427,8 @@ def demo(root_dir, weight_path, interp_factor, img_path):
 
     ground_truth = convdata
     save_binary(ground_truth, "demo/ground_truth.data") """
+
+
+def example(convdata):
+    strands = np.load(convdata).reshape(100, 4, 32, 32)
+    show3DhairPlotByStrands(strands)

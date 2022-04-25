@@ -2,6 +2,7 @@ venv
 
 demo
 data
+wandb
 debug
 weight
 convdata

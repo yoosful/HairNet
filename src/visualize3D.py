@@ -1,38 +1,38 @@
 import matplotlib.pyplot as plt
-import re
 
-from preprocessing import gen_RT_matrix, get_rendered_convdata
+# import re
 
-proj_dir = "."
-train_index_path = proj_dir + "/data/index/train.txt"
+# from preprocessing import gen_RT_matrix, get_rendered_convdata
 
-train_index = []
+# proj_dir = "."
+# train_index_path = proj_dir + "/data/index/train.txt"
 
-with open(train_index_path, "r") as f:
-    lines = f.readlines()
-    for x in lines:
-        train_index.append(x.strip().split(" "))
+# train_index = []
+
+# with open(train_index_path, "r") as f:
+#     lines = f.readlines()
+#     for x in lines:
+#         train_index.append(x.strip().split(" "))
 
 
-def show3DhairPlot(index):
-    """
-    strands: [100, 4, 32, 32]
-    mask: [32, 32] bool
-    """
-    # f = open("hair.obj", "w+")
+# def show3DhairPlot(index):
+#     """
+#     strands: [100, 4, 32, 32]
+#     mask: [32, 32] bool
+#     """
+#     # f = open("hair.obj", "w+")
 
-    current_index = train_index[index]
-    current_convdata_index = re.search(
-        "strands\d\d\d\d\d_\d\d\d\d\d_\d\d\d\d\d", str(current_index)
-    ).group(0)
-    print(current_convdata_index)
-    current_RT_mat = gen_RT_matrix(proj_dir + "/data/" + str(current_index[0]) + ".txt")
-    current_convdata_path = (
-        proj_dir + "/convdata/" + str(current_convdata_index) + ".convdata"
-    )
-    # current_RT_mat = np.dot(current_RT_mat, gen_RT_matrix2([0, 0, 0, 0.5, 0.5, 0.5]))
-    strands = get_rendered_convdata(current_convdata_path, current_RT_mat)
-    show3DhairPlotByStrands(strands)
+#     current_index = train_index[index]
+#     current_convdata_index = re.search(
+#         "strands\d\d\d\d\d_\d\d\d\d\d_\d\d\d\d\d", str(current_index)
+#     ).group(0)
+#     current_RT_mat = gen_RT_matrix(proj_dir + "/data/" + str(current_index[0]) + ".txt")
+#     current_convdata_path = (
+#         proj_dir + "/convdata/" + str(current_convdata_index) + ".convdata"
+#     )
+#     # current_RT_mat = np.dot(current_RT_mat, gen_RT_matrix2([0, 0, 0, 0.5, 0.5, 0.5]))
+#     strands = get_rendered_convdata(current_convdata_path, current_RT_mat)
+#     show3DhairPlotByStrands(strands)
 
 
 def show3DhairPlotByStrands(strands):
