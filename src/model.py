@@ -3,23 +3,9 @@ Copyright@ Qiao-Mu(Albert) Ren.
 All Rights Reserved.
 This is the code to build a neural network.
 """
-import os
-import numpy as np
-import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
-from torch.utils.data import DataLoader
-
-from .dataloader import HairNetDataset
-
-import wandb
-
-import cv2
-import matplotlib.pyplot as plt
-from preprocessing import gasuss_noise
-from visualize3D import show3DhairPlotByStrands
 
 
 class Net(nn.Module):
@@ -157,13 +143,61 @@ class CollisionLoss(nn.Module):
 
 class PosMSE(nn.Module):
     def __init__(self):
-        super(MyCurEvaluation, self).__init__()
+        super(PosMSE, self).__init__()
 
-    def forward(self, output, convdata):
-        loss = 0.0
-        for i in range(0, 32):
-            for j in range(0, 32):
-                loss += torch.mean(
-                    torch.abs(convdata[:, :, 3, i, j] - output[:, :, 3, i, j])
-                )
-        return loss / 1024.0
+    def forward(self, output, convdata, visweight, verbose=False):
+        visweight = visweight[:, :, :, :].reshape(1, -1)
+        e_squared = torch.pow(
+            (convdata[:, :, 0:3, :, :] - output[:, :, 0:3, :, :]), 2
+        ).reshape(-1, 3)
+        loss = visweight.mm(e_squared).sum()
+
+        if verbose:
+            print("[Position Loss]")
+
+            visweight1 = (visweight == 10).float() * 10
+            vis_loss = visweight1.mm(e_squared).sum()
+            print(
+                "\tvis: ",
+                (vis_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
+            )
+
+            visweight2 = (visweight == 0.1).float() * 0.1
+            inv_loss = visweight2.mm(e_squared).sum()
+            print(
+                "\tinv: ",
+                (inv_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
+            )
+
+        return loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)
+
+
+class CurMSE(nn.Module):
+    def __init__(self):
+        super(CurMSE, self).__init__()
+
+    def forward(self, output, convdata, visweight, verbose=False):
+        visweight = visweight[:, :, :, :].reshape(1, -1)
+        e_squared = torch.pow(
+            (convdata[:, :, 3, :, :] - output[:, :, 3, :, :]), 2
+        ).reshape(-1, 1)
+        loss = visweight.mm(e_squared).sum()
+
+        if verbose:
+            print("[Curvature Loss]")
+
+            visweight1 = (visweight == 10).float() * 10
+            vis_loss = visweight1.mm(e_squared).sum()
+            print(
+                "\tvis: ",
+                (vis_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
+            )
+
+            visweight2 = (visweight == 0.1).float() * 0.1
+            inv_loss = visweight2.mm(e_squared).sum()
+            print(
+                "\tinv: ",
+                (inv_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
+            )
+
+        return loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)
