@@ -9,16 +9,20 @@ import cv2
 import re
 from torchvision import transforms
 from torch.utils.data import Dataset
-from preprocessing import gen_vis_weight, gasuss_noise
+
+from .preprocessing import (
+    gen_vis_weight,
+    gasuss_noise,
+)
 
 
 class HairNetDataset(Dataset):
-    def __init__(self, project_dir, train_flag=1, noise_flag=1):
+    def __init__(self, data_path, train_flag=1, noise_flag=1):
         """
-        param project_dir: the path of project, such as '/home/albertren/Workspace/HairNet/HairNet-ren'
+        param data_path: the path of project, such as '/home/albertren/Workspace/HairNet/HairNet-ren'
         param train_flag: train_flag=1 -> generate training dataset, train_flag=0 -> generate testing dataset
         """
-        self.project_dir = project_dir
+        self.data_path = data_path
         self.train_flag = train_flag
         self.noise_flag = noise_flag
         self.toTensor = transforms.ToTensor()
@@ -31,12 +35,16 @@ class HairNetDataset(Dataset):
             self.train_index = []
             self.train_index_path = train_path
             with open(self.train_index_path, "r") as f:
+                self.train_index_path = self.data_path + "/index/train.txt"
+            with open(self.train_index_path, "r") as f:
                 lines = f.readlines()
                 for x in lines:
                     self.train_index.append(x.strip().split(" "))
         if self.train_flag == 0:
             self.test_index = []
             self.test_index_path = test_path
+            with open(self.test_index_path, "r") as f:
+                self.test_index_path = self.data_path + "/index/test.txt"
             with open(self.test_index_path, "r") as f:
                 lines = f.readlines()
                 for x in lines:

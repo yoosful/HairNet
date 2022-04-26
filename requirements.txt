@@ -1,6 +1,9 @@
-torch
+# base ======
 PyQt5
-matplotlib
+torch
 torchvision
-# opencv-python
+matplotlib
 opencv-python-headless
+
+# logger ====
+# wandb

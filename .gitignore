@@ -8,3 +8,7 @@ weight
 convdata
 
 src/__pycache__
+*.pyc
+.vscode
+.wandb
+*/__pycache__
