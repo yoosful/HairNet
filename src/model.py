@@ -153,21 +153,21 @@ class PosMSE(nn.Module):
         loss = visweight.mm(e_squared).sum()
 
         if verbose:
-            print("[Position Loss]")
+            # print("[Position Loss]")
 
             visweight1 = (visweight == 10).float() * 10
             vis_loss = visweight1.mm(e_squared).sum()
-            print(
-                "\tvis: ",
-                (vis_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
-            )
+            # print(
+            #     "\tvis: ",
+            #     (vis_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
+            # )
 
             visweight2 = (visweight == 0.1).float() * 0.1
             inv_loss = visweight2.mm(e_squared).sum()
-            print(
-                "\tinv: ",
-                (inv_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
-            )
+            # print(
+            #     "\tinv: ",
+            #     (inv_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
+            # )
 
         return loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)
 
@@ -188,16 +188,16 @@ class CurMSE(nn.Module):
 
             visweight1 = (visweight == 10).float() * 10
             vis_loss = visweight1.mm(e_squared).sum()
-            print(
-                "\tvis: ",
-                (vis_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
-            )
+            # print(
+            #     "\tvis: ",
+            #     (vis_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
+            # )
 
             visweight2 = (visweight == 0.1).float() * 0.1
             inv_loss = visweight2.mm(e_squared).sum()
-            print(
-                "\tinv: ",
-                (inv_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
-            )
+            # print(
+            #     "\tinv: ",
+            #     (inv_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
+            # )
 
         return loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)

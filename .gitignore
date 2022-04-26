@@ -9,6 +9,9 @@ convdata
 
 src/__pycache__
 *.pyc
+*/convdata/
+*data/
+*.pt
 .vscode
 .wandb
 */__pycache__

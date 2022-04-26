@@ -1,19 +1,15 @@
 import os
+import time
 import logging
 import argparse
-import time
-import cv2
-import numpy as np
 
 import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from src.preprocessing import gasuss_noise
 
-from src.utils import id_generator
 from src.dataloader import HairNetDataset
-from src.model import Net, MyLoss, CollisionLoss, PosMSE, CurMSE
-from src.visualize3D import show3DhairPlotByStrands
+from src.model import Net, MyLoss, CollisionLoss, CurMSE, PosMSE
 
 
 log = logging.getLogger("HairNet")
@@ -26,8 +22,8 @@ def get_args():
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--lr_step", type=int, default=10)
-    parser.add_argument("--save_dir", type=str, default="weight/")
-    parser.add_argument("--data", type=str, default=".")
+    parser.add_argument("--save_dir", type=str, default="./weight/")
+    parser.add_argument("--data", type=str, default="./")
     parser.add_argument("--weight", type=str, default="")
     parser.add_argument("--test_step", type=int, default=0)
     return parser.parse_args()
@@ -55,11 +51,9 @@ def train(model, dataloader, optimizer, device):
 
 
 def test(model, dataloader, device):
-    print("This is the programme of testing.")
-
-    pos_error = PosMSE().to(device)  # Position
-    cur_error = CurMSE().to(device)  # Curvature
-    col_error = CollisionLoss().to(device)  # Collision
+    pos_error = PosMSE().to(device)
+    cur_error = CurMSE().to(device)
+    col_error = CollisionLoss().to(device)
     tot_error = MyLoss().to(device)
 
     model.eval()
@@ -72,12 +66,13 @@ def test(model, dataloader, device):
 
         output = model(img)
 
+        # cal loss
         pos = pos_error(output, convdata, visweight, verbose=True)
         cur = cur_error(output, convdata, visweight)
         col = col_error(output, convdata)
         tot = tot_error(output, convdata, visweight)
 
-        return pos.item(), cur.item(), col.item(), tot.item()
+    return pos.item(), cur.item(), col.item(), tot.item()
 
 
 if __name__ == "__main__":
@@ -112,14 +107,20 @@ if __name__ == "__main__":
     train_loader = DataLoader(dataset=train_data, batch_size=bs)
     log.info(f"Train dataset: {len(train_data)} data points")
 
-    if test_step == 0:
+    if test_step != 0:
         test_data = HairNetDataset(project_dir=data, train_flag=0, noise_flag=0)
         test_loader = DataLoader(dataset=test_data, batch_size=bs)
         log.info(f"Test dataset: {len(test_data)} data points")
 
     # setup optimizer & lr schedualer
     optimizer = optim.Adam(net.parameters(), lr=lr)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, milestones=10, gamma=0.5)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
+
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    t = time.localtime()
+    save_path = save_dir + time.strftime("%H:%M:%S", t)
+    os.mkdir(save_path)
 
     # train
     log.info("Training ...")
@@ -136,62 +137,16 @@ if __name__ == "__main__":
         time_elapsed = int(round(time.time() * 1000)) - since
 
         # Logging
-        log.info(f"Epoch {epoch+1} | loss: {train_loss} | time: {time_elapsed}ms")
+        log.info(f"Epoch {epoch+1} | Loss: {train_loss:.4f} | time: {time_elapsed}ms")
         if test_step != 0 and (epoch + 1) % test_step == 0:
-            pos_loss, cur_loss = test(net, test_loader, device)
+            pos_loss, cur_loss, col_loss, tot_loss = test(net, test_loader, device)
+
             log.info(
-                f"Epoch: {epoch+1} | Position loss: {pos_loss} | Curvature loss: {cur_loss}"
+                f"Epoch {epoch+1} | Loss[ Pos | Cur | Col | Total ]: "
+                f"[ {pos_loss:.4f} | {cur_loss:.4f} | {col_loss:.4f} | {tot_loss:.4f} ]"
             )
 
         # Save model by performance
         if train_loss < pre_loss:
             pre_loss = train_loss
-            if not os.path.exists(save_dir):
-                os.makedirs(save_dir)
-            save_path = save_dir + id_generator(6)
-            os.mkdir(save_dir)
-            torch.save(net.state_dict(), save_path + "weight.pt")
-            log.info("Saved model in " + save_path)
-
-
-# def demo(weight_path, interp_factor, img_path):
-#     print("This is the programme of demo.")
-#     # load model
-#     print("Building Network...")
-#     net = Net()
-#     # net.cuda()
-#     net.load_state_dict(torch.load(weight_path, map_location="cpu"))
-#     net.eval()
-
-#     """ convdata_path = "convdata/" + img_path.split("/")[-1].split("_v1")[0] + ".convdata"
-#     convdata = np.load(convdata_path).reshape(100, 4, 32, 32) """
-
-#     # load demo data
-#     img = cv2.imread(img_path)
-#     img = gasuss_noise(img)
-#     img = img.reshape(1, 3, 128, 128)
-#     img = torch.from_numpy(img).float()
-
-#     # img = img.cuda()
-#     output = net(img, interp_factor)
-
-#     strands = output[0].cpu().detach().numpy()  # hair strands
-
-#     # axis-wise 1D gaussian filtering
-#     gaussian = cv2.getGaussianKernel(10, 3)
-#     for i in range(strands.shape[2]):
-#         for j in range(strands.shape[3]):
-#             strands[:, :3, i, j] = cv2.filter2D(strands[:, :3, i, j], -1, gaussian)
-
-#     show3DhairPlotByStrands(strands)
-
-#     # generate .data file (format in http://www-scf.usc.edu/~liwenhu/SHM/database.html)
-#     """ epoch = weight_path[-16:-10]
-#     save_binary(strands, "demo/epoch_{}.data".format(epoch))
-#     ground_truth = convdata
-#     save_binary(ground_truth, "demo/ground_truth.data") """
-
-
-# def example(convdata):
-#     strands = np.load(convdata).reshape(100, 4, 32, 32)
-#     show3DhairPlotByStrands(strands)
+            torch.save(net.state_dict(), save_path + "/weight.pt")

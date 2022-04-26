@@ -34,6 +34,48 @@ import matplotlib.pyplot as plt
 #     strands = get_rendered_convdata(current_convdata_path, current_RT_mat)
 #     show3DhairPlotByStrands(strands)
 
+# def demo(weight_path, interp_factor, img_path):
+#     print("This is the programme of demo.")
+#     # load model
+#     print("Building Network...")
+#     net = Net()
+#     # net.cuda()
+#     net.load_state_dict(torch.load(weight_path, map_location="cpu"))
+#     net.eval()
+
+#     """ convdata_path = "convdata/" + img_path.split("/")[-1].split("_v1")[0] + ".convdata"
+#     convdata = np.load(convdata_path).reshape(100, 4, 32, 32) """
+
+#     # load demo data
+#     img = cv2.imread(img_path)
+#     img = gasuss_noise(img)
+#     img = img.reshape(1, 3, 128, 128)
+#     img = torch.from_numpy(img).float()
+
+#     # img = img.cuda()
+#     output = net(img, interp_factor)
+
+#     strands = output[0].cpu().detach().numpy()  # hair strands
+
+#     # axis-wise 1D gaussian filtering
+#     gaussian = cv2.getGaussianKernel(10, 3)
+#     for i in range(strands.shape[2]):
+#         for j in range(strands.shape[3]):
+#             strands[:, :3, i, j] = cv2.filter2D(strands[:, :3, i, j], -1, gaussian)
+
+#     show3DhairPlotByStrands(strands)
+
+#     # generate .data file (format in http://www-scf.usc.edu/~liwenhu/SHM/database.html)
+#     """ epoch = weight_path[-16:-10]
+#     save_binary(strands, "demo/epoch_{}.data".format(epoch))
+#     ground_truth = convdata
+#     save_binary(ground_truth, "demo/ground_truth.data") """
+
+
+# def example(convdata):
+#     strands = np.load(convdata).reshape(100, 4, 32, 32)
+#     show3DhairPlotByStrands(strands)
+
 
 def show3DhairPlotByStrands(strands):
     """
