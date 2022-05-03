@@ -9,7 +9,7 @@ import cv2
 import re
 from torchvision import transforms
 from torch.utils.data import Dataset
-from .preprocessing import gen_vis_weight, gasuss_noise
+from preprocessing import gasuss_noise
 
 
 class HairNetDataset(Dataset):
@@ -55,13 +55,16 @@ class HairNetDataset(Dataset):
             self.convdata_path + str(current_convdata_index) + ".convdata"
         )
         current_convdata = np.load(current_convdata_path).reshape(100, 4, 32, 32)
-        current_visweight = gen_vis_weight(
-            self.data_path + str(current_index[0]) + ".vismap"
-        )
+        # current_visweight = gen_vis_weight(
+        #     self.data_path + str(current_index[0]) + ".vismap"
+        # )
+        current_visweight_path = self.data_path + str(current_index[0]) + ".vismap"
+        current_visweight = np.load(current_visweight_path)
         current_img = cv2.imread(self.data_path + str(current_index[0]) + ".png")
 
         if self.noise_flag == 1:
             current_img = gasuss_noise(current_img)
+
         current_img = self.toTensor(current_img)
 
         return current_img, current_convdata, current_visweight

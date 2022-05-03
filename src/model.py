@@ -183,21 +183,22 @@ class CurMSE(nn.Module):
         ).reshape(-1, 1)
         loss = visweight.mm(e_squared).sum()
 
-        if verbose:
-            print("[Curvature Loss]")
+        # if verbose:
+        #     # print("[Curvature Loss]")
 
-            visweight1 = (visweight == 10).float() * 10
-            vis_loss = visweight1.mm(e_squared).sum()
-            # print(
-            #     "\tvis: ",
-            #     (vis_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
-            # )
+        #     visweight1 = (visweight == 10).float() * 10
+        #     vis_loss = visweight1.mm(e_squared).sum()
+        #     # print(
+        #     #     "\tvis: ",
+        #     #     (vis_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
+        #     # )
 
-            visweight2 = (visweight == 0.1).float() * 0.1
-            inv_loss = visweight2.mm(e_squared).sum()
-            # print(
-            #     "\tinv: ",
-            #     (inv_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
-            # )
+        #     visweight2 = (visweight == 0.1).float() * 0.1
+        #     inv_loss = visweight2.mm(e_squared).sum()
+        #     # print(
+        #     #     "\tinv: ",
+        #     #     (inv_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
+        #     # )
+        print(convdata.shape)
 
         return loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)
