@@ -19,7 +19,7 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--epoch", type=int, default=100)
     parser.add_argument("--batch_size", type=int, default=8)  # 32
-    parser.add_argument("--lr", type=float, default=0.001)  # 0.001
+    parser.add_argument("--lr", type=float, default=0.0001)  # 0.001
     parser.add_argument("--lr_step", type=int, default=10)
     parser.add_argument("--save_dir", type=str, default="./weight/")
     parser.add_argument("--data", type=str, default="./")
@@ -38,10 +38,11 @@ def train(model, dataloader, optimizer, device):
         visweight = visweight.to(device)
         # img (bs, 3, 128, 128); convdata (bs, 100, 4, 32, 32); visweight (bs, 100, 32, 32)
 
+        optimizer.zero_grad()
+
         output = net(img)
         my_loss = loss(output, convdata, visweight)
 
-        optimizer.zero_grad()
         my_loss.backward()
 
         optimizer.step()
@@ -100,7 +101,7 @@ if __name__ == "__main__":
 
     if weight != "":
         log.info("Loading model's weight ...")
-        net.load_state_dict(torch.load(weight))
+        net.load_state_dict(torch.load(weight, map_location=torch.device(device)))
 
     # load data
     log.info("Loading data ...")
