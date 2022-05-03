@@ -199,6 +199,5 @@ class CurMSE(nn.Module):
         #     #     "\tinv: ",
         #     #     (inv_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
         #     # )
-        print(convdata.shape)
 
         return loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)

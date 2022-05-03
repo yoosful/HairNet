@@ -1,49 +1,31 @@
 import os
 import random
 
+path = "./data/index/"
+
 
 def train_test_split():
-    list = open("train.txt", "a")
-    files = os.listdir("convdata")
-    list_txt = []
-    train_txt = []
-    # test_txt = []
+    get_list_name()
 
-    for file in files:
-        data = file.split(".")[0]
-        # list_txt.append(data)
-        if random.random() > 0.5 and "strands" in data:
-            if len(train_txt) >= 1000:
-                break
-            # train_txt.append(data)
-            if random.random() >= 0.5:
-                list.write(data + "_v0\n")
-            else:
-                list.write(data + "_v1\n")
+    train = open(path + "train.txt", "a")
+    test = open(path + "test.txt", "a")
 
-        # if random.random() > 0.7:
-        #     test_txt.append(data)
-        # else:
-        #     train_txt.append(data)
+    with open(path + "list.txt") as f:
+        lines = f.readlines()
 
-        # data = file.split(".")[0] + "_v1"
-        # list_txt.append(data)
-        # if random.random() > 0.5:
-        #     if len(train_txt) >= 500:
-        #         continue
-        #     # train_txt.append(data)
-        #     list.write(data + "\n")
+    for line in lines:
+        if random.random() <= 0.7 and "strands" in line:
+            train.write(line)
+        else:
+            test.write(line)
 
-        # list_txt.append(data)
-        # if random.random() > 0.7:
-        #     test_txt.append(data)
-        # else:
-        #     train_txt.append(data)
+    train.close()
+    test.close()
 
 
 def get_list_name():
     # Append-adds at last
-    list = open("list.txt", "a")  # append mode
+    list = open(path + "list.txt", "a")  # append mode
     files = os.listdir("data")
     for file in files:
         if "txt" in file:
