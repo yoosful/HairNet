@@ -89,7 +89,7 @@ class MyLoss(nn.Module):
         cur_loss = CurMSE().forward(output, convdata, visweight)
         col_loss = CollisionLoss().forward(output, convdata)
 
-        return pos_loss + cur_loss + 1e-4 * col_loss
+        return pos_loss + cur_loss + col_loss
 
 
 class CollisionLoss(nn.Module):
@@ -115,8 +115,9 @@ class CollisionLoss(nn.Module):
         )
         D[D < 0] = 0
         C = torch.sum(L1 * D)
-        loss = C / (convdata.shape[0] * convdata.shape[1] * 1024.0)
-        return loss
+        return C / 1024.0
+        # loss = C / (convdata.shape[0] * convdata.shape[1] * 1024.0)
+        # return loss
 
 
 class PosMSE(nn.Module):
@@ -130,7 +131,10 @@ class PosMSE(nn.Module):
         ).reshape(-1, 3)
         loss = visweight.mm(e_squared).sum()
 
-        return loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)
+        # convdata.shape 8, 100, 4, 32, 32
+        return loss / 1024
+
+        # return loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)
 
 
 class CurMSE(nn.Module):
@@ -144,4 +148,6 @@ class CurMSE(nn.Module):
         ).reshape(-1, 1)
         loss = visweight.mm(e_squared).sum()
 
-        return loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)
+        return loss / 1024
+
+        # return loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)
