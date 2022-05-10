@@ -35,7 +35,7 @@ def map_colors(value):
 # load pre-trained model and weights
 def load_model():
     model = MobileNetV2_unet()
-    state_dict = torch.load("model.pt", map_location="cpu")
+    state_dict = torch.load("hair_detection/model/model.pt", map_location="cpu")
     model.load_state_dict(state_dict)
     model.eval()
     return model
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     )
     # fig = plt.figure()
 
-    image = cv2.imread("4.jpg")
+    image = cv2.imread("1.jpg")
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
     pil_img = Image.fromarray(image)
@@ -113,10 +113,10 @@ if __name__ == "__main__":
     # kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
     # output = cv2.filter2D(src=output, ddepth=-1, kernel=kernel)
 
-    cv2.imshow("image", output)
-    cv2.waitKey(0)
+    # cv2.imshow("image", output)
+    # cv2.waitKey(0)
 
-    cv2.imwrite("output_4.jpg", output)
+    cv2.imwrite("output_4_testing.jpg", output)
 
     # Plot
     # ax = plt.subplot(111)

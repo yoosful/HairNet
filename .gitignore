@@ -5,6 +5,7 @@ data
 wandb
 debug
 weight
+vismap
 convdata
 
 src/__pycache__
