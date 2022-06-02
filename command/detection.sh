@@ -1,0 +1,1 @@
+python hair_detection/main.py --image_path 1.png --map_color=False --save_img=False

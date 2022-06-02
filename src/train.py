@@ -74,7 +74,12 @@ def test(model, dataloader, device):
 
         tot = tot_error(output, convdata, visweight)
 
-    return pos.item(), cur.item(), col.item(), tot.item()
+        log.info(
+            f"TESTING Epoch {i+1} | Loss[ Pos | Cur | Col | Total ]: "
+            f"[ {pos:.8f} | {cur:.8f} | {col:.8f} | {tot:.8f} ]"
+        )
+
+    # return pos.item(), cur.item(), col.item(), tot.item()
 
 
 if __name__ == "__main__":
@@ -140,14 +145,11 @@ if __name__ == "__main__":
         time_elapsed = int(round(time.time() * 1000)) - since
 
         # Logging
-        log.info(f"Epoch {epoch+1} | Loss: {train_loss:.8f} | time: {time_elapsed}ms")
+        log.info(
+            f"TRAINING Epoch {epoch+1} | Loss: {train_loss:.8f} | time: {time_elapsed}ms"
+        )
         if test_step != 0 and (epoch + 1) % test_step == 0:
-            pos_loss, cur_loss, col_loss, tot_loss = test(net, test_loader, device)
-
-            log.info(
-                f"Epoch {epoch+1} | Loss[ Pos | Cur | Col | Total ]: "
-                f"[ {pos_loss:.8f} | {cur_loss:.8f} | {col_loss:.8f} | {tot_loss:.8f} ]"
-            )
+            test(net, test_loader, device)
 
         # Save model by performance
         if train_loss < pre_loss:

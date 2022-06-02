@@ -1,5 +1,1 @@
-python src/main.py --mode demo --path . --weight weight/00000$1_weight.pt --interp_factor 1
-cp demo/*.data ../hair_viewer
-cd ../hair_viewer
-./hairviewer epoch_00000$1.data
-#./hairviewer ground_truth.data
+python src/main.py --mode demo --weight ./weight/weight.pt --img_path ./data/strands00006_00008_00000_v0.png
