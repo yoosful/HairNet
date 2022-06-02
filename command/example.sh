@@ -1,0 +1,1 @@
+python src/main.py --mode example --conv ./convdata/strands00006_00008_00000.convdata

@@ -1,43 +1,71 @@
-# HairNet
+# HAIRNET
 
-## abstract
+## Abstract
 
-- implementation of [HairNet: Single-View Hair Reconstruction using Convolutional Neural Networks](https://arxiv.org/abs/1806.07467)
-- several changes in training data & network architecture for faster training
-  - smaller input size: 256 x 256 -> 128 x 128
-  - fewer convolution layers in the encoder
+- Implementation of [HairNet: Single-View Hair Reconstruction using Convolutional Neural Networks](https://arxiv.org/abs/1806.07467)
+- Several changes in training data & network architecture for faster training
+  - Smaller input size: 256 x 256 -> 128 x 128
+  - Fewer convolution layers in the encoder
 
-## instructions
+## Instructions
 
-### installation
+### Installation
 
 - python3
 - python packages (pytorch, opencv, etc.)
-  - `pip install -r requirements.txt`
+  ```bash
+    pip install -r requirements.txt
+  ```
 
-### training
+### Pre-processing
 
-- **train** mode performs network training with 70% of the data
-- [download](https://bit.ly/32l59ZD) HairNet's training data (2D hair orientation image & 3D hair model)
-  - refer to the [author's implementation](https://github.com/papagina/HairNet_DataSetGeneration) for more details
-- `python src/main.py --mode train --path .`
-- the trained model will be saved in the **weight** folder
+- Hair detection
 
-### testing
+```bash
+python hair_detection/main.py --image_path *.png --map_color=False --save_img=False
+```
 
-- **train** mode evaluates the network with 30% of the data
-- train or [download](https://bit.ly/34I4QLx) a pretrained model to **weight** folder
-- `python src/main.py --mode test --path . --weight weight/*_weight.pt`
+### Training
 
-### reconstruction
+- **Train** mode performs network training with 70% of the data
+- [Download](https://bit.ly/32l59ZD) HairNet's training data (2D hair orientation image & 3D hair model)
+- The trained model will be saved in the **weight** folder
+- Training by running this command with list of arguments below:
 
-- **reconstruction** mode performs some post-processing and saves the 3D model as a `*.data` file
-- `python src/main.py --mode reconstruction --path . --weight weight/*_weight.pt --interp_factor 1`
-- to visualize the generated file, you will need a renderer
-  - download our [OpenGL implementation](https://github.com/givenone/hair-renderer)
-  - compile and run it on the `*.data` file
+  ```bash
+  python src/train.py
+  ```
 
-## Acknowledgement
-Baseline implementation forked from [MrPhD](https://github.com/MrPhD).
+List of Arguments
+| Args | Type | |
+|--------------|-------|--------------------------------------------------------------|
+| --epoch | int | Number of epoch |
+| --batch_size | int | Number of batch size |
+| --lr | float | Learning rate |
+| --lr_step | int | Number of epoch to reduce 1/2 lr |
+| --data | str | Path to ./data/ |
+| --save_dir | str | Path to save trained weights |
+| --weight | str | Load weight from path |
+| --test_step | int | If `test_step` != 0, test each `n` step after train an epoch |
 
+_Notes_: Hyperparameters of original HairNet.
 
+- Epoch: 500
+- Batch size: 32
+- Learning rate: 1e-4
+- Learning rate step: 250 epochs
+- Optimization: Adam
+
+### Example
+
+```bash
+python src/main.py --mode example --conv *.convdata
+```
+
+### Demo
+
+- **Demo** mode takes image as input and visualizes hairs
+
+```bash
+python src/main.py --mode demo --weight *.pt --img_path *.png
+```
